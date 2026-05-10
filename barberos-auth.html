@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>BarberOS — Acceso</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600;700&family=Barlow+Condensed:wght@600;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black: #0c0c0d;
+  --dark: #111214;
+  --card: #18191e;
+  --border: #2a2b32;
+  --gold: #c9972a;
+  --gold2: #e8b84b;
+  --gold-dim: rgba(201,151,42,.12);
+  --red: #d72638;
+  --white: #f5f3ef;
+  --muted: #6b6f7a;
+  --radius: 16px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--black);
+  color: var(--white);
+  font-family: 'Outfit', sans-serif;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* BG ANIMADO */
+.bg {
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 20%, rgba(201,151,42,.07) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 60% at 80% 80%, rgba(215,38,56,.05) 0%, transparent 70%),
+    var(--black);
+}
+.bg-lines {
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(201,151,42,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201,151,42,.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* WRAPPER */
+.auth-wrapper {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 420px;
+  padding: 20px 16px;
+}
+
+/* LOGO */
+.logo-block {
+  text-align: center;
+  margin-bottom: 32px;
+  animation: fadeDown .5s ease both;
+}
+.logo-icon {
+  width: 56px; height: 56px; border-radius: 14px;
+  background: linear-gradient(135deg, var(--gold), #8b6314);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; margin: 0 auto 12px;
+  box-shadow: 0 8px 24px rgba(201,151,42,.25);
+}
+.logo-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 28px; font-weight: 900; letter-spacing: 3px;
+  color: var(--white);
+}
+.logo-name span { color: var(--gold); }
+.logo-sub {
+  font-size: 12px; color: var(--muted); letter-spacing: 1px;
+  text-transform: uppercase; margin-top: 4px;
+}
+
+/* CARD */
+.auth-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px 24px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.4);
+  animation: fadeUp .5s ease .1s both;
+}
+
+/* TABS */
+.auth-tabs {
+  display: flex; gap: 0;
+  background: var(--black);
+  border-radius: 10px; padding: 4px;
+  margin-bottom: 24px;
+}
+.auth-tab {
+  flex: 1; padding: 9px; border-radius: 8px; border: none;
+  background: none; color: var(--muted);
+  font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all .2s;
+}
+.auth-tab.active {
+  background: var(--card);
+  color: var(--white);
+  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+}
+
+/* FORMS */
+.form-group { margin-bottom: 16px; }
+.form-label {
+  display: block; font-size: 11px; font-weight: 600;
+  color: var(--muted); margin-bottom: 7px;
+  text-transform: uppercase; letter-spacing: .8px;
+}
+.form-input {
+  width: 100%; background: var(--black);
+  border: 1.5px solid var(--border); border-radius: 10px;
+  padding: 12px 14px; color: var(--white);
+  font-family: 'Outfit', sans-serif; font-size: 14px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.form-input:focus {
+  outline: none; border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,151,42,.12);
+}
+.form-input::placeholder { color: var(--muted); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* BADGE TRIAL */
+.trial-badge {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--gold-dim); border: 1px solid rgba(201,151,42,.2);
+  border-radius: 10px; padding: 10px 14px; margin-bottom: 20px;
+}
+.trial-icon { font-size: 18px; }
+.trial-text { font-size: 12px; color: var(--gold2); font-weight: 600; line-height: 1.4; }
+
+/* BOTONES */
+.btn {
+  width: 100%; padding: 13px; border-radius: 10px; border: none;
+  cursor: pointer; font-family: 'Outfit', sans-serif;
+  font-size: 14px; font-weight: 700; transition: all .15s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold), #a07820);
+  color: var(--black);
+  box-shadow: 0 4px 16px rgba(201,151,42,.3);
+}
+.btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(201,151,42,.4); }
+.btn-gold:active { transform: translateY(0); }
+.btn-outline {
+  background: transparent; border: 1.5px solid var(--border); color: var(--muted);
+  margin-top: 10px; font-size: 13px;
+}
+.btn-outline:hover { border-color: var(--muted); color: var(--white); }
+
+.divider {
+  display: flex; align-items: center; gap: 10px;
+  margin: 18px 0; color: var(--muted); font-size: 11px;
+}
+.divider::before, .divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* GOOGLE BTN */
+.btn-google {
+  background: #1a1c22; border: 1.5px solid var(--border);
+  color: var(--white); width: 100%; padding: 12px;
+  border-radius: 10px; border: none; cursor: pointer;
+  font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: all .15s;
+}
+.btn-google:hover { background: #22242d; }
+
+/* LINK */
+.auth-link {
+  text-align: center; margin-top: 16px;
+  font-size: 12px; color: var(--muted);
+}
+.auth-link a { color: var(--gold); text-decoration: none; font-weight: 600; }
+
+/* ERROR / SUCCESS */
+.msg {
+  padding: 10px 14px; border-radius: 8px;
+  font-size: 12px; font-weight: 600; margin-bottom: 14px;
+  display: none;
+}
+.msg.error { background: rgba(215,38,56,.12); color: #ff6b7a; border: 1px solid rgba(215,38,56,.2); display: block; }
+.msg.success { background: rgba(46,204,113,.1); color: #2ecc71; border: 1px solid rgba(46,204,113,.2); display: block; }
+
+/* LOADER */
+.btn-loader { display: none; }
+.btn.loading .btn-text { display: none; }
+.btn.loading .btn-loader { display: block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  width: 18px; height: 18px; border: 2px solid rgba(0,0,0,.2);
+  border-top-color: var(--black); border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+
+/* ANIMACIONES */
+@keyframes fadeDown { from { opacity:0; transform:translateY(-16px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+/* FORGOT */
+.forgot-link {
+  font-size: 11px; color: var(--muted); text-decoration: none;
+  float: right; margin-top: -4px; transition: color .15s;
+}
+.forgot-link:hover { color: var(--gold); }
+
+/* FOOTER */
+.auth-footer {
+  text-align: center; margin-top: 20px;
+  font-size: 11px; color: var(--muted);
+  animation: fadeUp .5s ease .2s both;
+}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="bg-lines"></div>
+
+<div class="auth-wrapper">
+  <div class="logo-block">
+    <div class="logo-icon">✂</div>
+    <div class="logo-name">Barber<span>OS</span></div>
+    <div class="logo-sub">Plataforma SaaS para Barberías</div>
+  </div>
+
+  <div class="auth-card">
+    <!-- TABS -->
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')">Iniciar Sesión</button>
+      <button class="auth-tab" onclick="switchTab('registro')">Registrarse</button>
+    </div>
+
+    <!-- MENSAJE -->
+    <div class="msg" id="auth-msg"></div>
+
+    <!-- LOGIN -->
+    <div id="form-login">
+      <div class="form-group">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" class="form-input" id="l-email" placeholder="tu@barberia.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">
+          Contraseña
+          <a href="#" class="forgot-link" onclick="forgotPassword()">¿Olvidaste?</a>
+        </label>
+        <input type="password" class="form-input" id="l-pass" placeholder="••••••••"
+          onkeydown="if(event.key==='Enter') loginEmail()">
+      </div>
+      <button class="btn btn-gold" onclick="loginEmail()">
+        <span class="btn-text">Entrar al Panel</span>
+        <span class="btn-loader"><div class="spinner"></div></span>
+      </button>
+      <div class="divider">o continúa con</div>
+      <button class="btn-google" onclick="loginGoogle()">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continuar con Google
+      </button>
+    </div>
+
+    <!-- REGISTRO -->
+    <div id="form-registro" style="display:none">
+      <div class="trial-badge">
+        <div class="trial-icon">🎉</div>
+        <div class="trial-text">
+          7 días GRATIS sin tarjeta de crédito<br>
+          <span style="font-weight:400;opacity:.8">Acceso completo a todas las funciones</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nombre de tu barbería</label>
+        <input type="text" class="form-input" id="r-barberia" placeholder="Ej: BarberShop El Rey">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Tu nombre</label>
+          <input type="text" class="form-input" id="r-nombre" placeholder="Nombre">
+        </div>
+        <div class="form-group">
+          <label class="form-label">WhatsApp</label>
+          <input type="tel" class="form-input" id="r-wa" placeholder="3001234567">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" class="form-input" id="r-email" placeholder="tu@barberia.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contraseña</label>
+        <input type="password" class="form-input" id="r-pass" placeholder="Mínimo 6 caracteres"
+          onkeydown="if(event.key==='Enter') registrar()">
+      </div>
+      <button class="btn btn-gold" onclick="registrar()">
+        <span class="btn-text">Iniciar prueba gratis ✓</span>
+        <span class="btn-loader"><div class="spinner"></div></span>
+      </button>
+      <div class="auth-link" style="margin-top:12px;font-size:11px">
+        Al registrarte aceptas los <a href="#">términos de uso</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-footer">
+    BarberOS © 2025 · Hecho en Colombia 🇨🇴
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  signInWithPopup, GoogleAuthProvider, sendPasswordResetEmail,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getFirestore, doc, setDoc, getDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCaKIEWgvtTMLkIPnIeHj3PrVQ9iodV5dI",
+  authDomain:        "barberos-pro.firebaseapp.com",
+  projectId:         "barberos-pro",
+  storageBucket:     "barberos-pro.firebasestorage.app",
+  messagingSenderId: "772002513976",
+  appId:             "1:772002513976:web:6cacb96069236dd8c6d2cd"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
+
+const $ = id => document.getElementById(id);
+
+// Si ya está logueado, redirigir
+onAuthStateChanged(auth, async user => {
+  if (user) {
+    const barberiaDoc = await getDoc(doc(db, "barberias", user.uid));
+    if (barberiaDoc.exists()) {
+      window.location.href = "barbero-app-firebase.html?uid=" + user.uid;
+    }
+  }
+});
+
+// ── SWITCH TABS ──
+window.switchTab = function(tab) {
+  $("form-login").style.display   = tab === "login"    ? "block" : "none";
+  $("form-registro").style.display = tab === "registro" ? "block" : "none";
+  document.querySelectorAll(".auth-tab").forEach((t,i) => {
+    t.classList.toggle("active", (tab==="login" && i===0) || (tab==="registro" && i===1));
+  });
+  showMsg("","");
+};
+
+// ── LOGIN EMAIL ──
+window.loginEmail = async function() {
+  const email = $("l-email").value.trim();
+  const pass  = $("l-pass").value;
+  if (!email || !pass) { showMsg("Completa todos los campos","error"); return; }
+  setLoading("form-login", true);
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, pass);
+    await redirigir(cred.user);
+  } catch(e) {
+    showMsg(tradError(e.code), "error");
+    setLoading("form-login", false);
+  }
+};
+
+// ── LOGIN GOOGLE ──
+window.loginGoogle = async function() {
+  try {
+    const cred = await signInWithPopup(auth, googleProvider);
+    const user = cred.user;
+    // Si es nuevo usuario de Google, crear su barbería
+    const ref = doc(db,"barberias",user.uid);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      await crearBarberia(user.uid, {
+        nombre: user.displayName || "Mi Barbería",
+        email: user.email,
+        wa: "",
+        dueno: user.displayName || ""
+      });
+    }
+    await redirigir(user);
+  } catch(e) {
+    if (e.code !== "auth/popup-closed-by-user")
+      showMsg(tradError(e.code), "error");
+  }
+};
+
+// ── REGISTRO ──
+window.registrar = async function() {
+  const nombreBarberia = $("r-barberia").value.trim();
+  const nombre = $("r-nombre").value.trim();
+  const wa     = $("r-wa").value.trim();
+  const email  = $("r-email").value.trim();
+  const pass   = $("r-pass").value;
+
+  if (!nombreBarberia || !nombre || !email || !pass) {
+    showMsg("Completa todos los campos obligatorios","error"); return;
+  }
+  if (pass.length < 6) { showMsg("La contraseña debe tener al menos 6 caracteres","error"); return; }
+
+  setLoading("form-registro", true);
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    await crearBarberia(cred.user.uid, { nombre: nombreBarberia, email, wa, dueno: nombre });
+    showMsg("¡Cuenta creada! Redirigiendo…","success");
+    setTimeout(() => redirigir(cred.user), 1200);
+  } catch(e) {
+    showMsg(tradError(e.code), "error");
+    setLoading("form-registro", false);
+  }
+};
+
+// ── CREAR BARBERÍA EN FIRESTORE ──
+async function crearBarberia(uid, data) {
+  const ahora = new Date();
+  const trial = new Date(ahora); trial.setDate(trial.getDate() + 7);
+
+  // Documento principal de la barbería
+  await setDoc(doc(db,"barberias",uid), {
+    nombre: data.nombre,
+    dueno: data.dueno,
+    email: data.email,
+    wa: data.wa || "",
+    plan: "trial",
+    trialInicio: serverTimestamp(),
+    trialFin: trial.toISOString(),
+    creadoEn: serverTimestamp(),
+    activo: true
+  });
+
+  // Config por defecto
+  await setDoc(doc(db,"barberias",uid,"config","barberia"), {
+    nombre: data.nombre,
+    wa: data.wa || "",
+    open: "08:00",
+    close: "19:30",
+    colorPrimario: "#c9972a",
+  });
+
+  // Servicios por defecto
+  const servicios = [
+    {id:"s1",nombre:"Corte clásico",precio:20000,orden:0},
+    {id:"s2",nombre:"Corte + barba",precio:35000,orden:1},
+    {id:"s3",nombre:"Arreglo barba",precio:18000,orden:2},
+    {id:"s4",nombre:"Degradado",precio:25000,orden:3},
+    {id:"s5",nombre:"Corte infantil",precio:15000,orden:4},
+    {id:"s6",nombre:"Diseño/líneas",precio:12000,orden:5},
+    {id:"s7",nombre:"Keratina",precio:50000,orden:6},
+    {id:"s8",nombre:"Color",precio:45000,orden:7},
+  ];
+  await Promise.all(servicios.map(s =>
+    setDoc(doc(db,"barberias",uid,"servicios",s.id), {nombre:s.nombre,precio:s.precio,orden:s.orden})
+  ));
+}
+
+// ── REDIRIGIR ──
+async function redirigir(user) {
+  const snap = await getDoc(doc(db,"barberias",user.uid));
+  if (snap.exists()) {
+    const data = snap.data();
+    // Verificar trial
+    const ahora = new Date();
+    const trialFin = new Date(data.trialFin);
+    const diasRestantes = Math.ceil((trialFin - ahora) / (1000*60*60*24));
+
+    // Guardar sesión en sessionStorage
+    sessionStorage.setItem("barberos_uid", user.uid);
+    sessionStorage.setItem("barberos_trial_dias", diasRestantes);
+    sessionStorage.setItem("barberos_plan", data.plan);
+    sessionStorage.setItem("barberos_nombre", data.nombre);
+
+    if (data.plan === "trial" && diasRestantes <= 0) {
+      window.location.href = "barberos-upgrade.html";
+    } else {
+      window.location.href = "barbero-app-firebase.html";
+    }
+  }
+}
+
+// ── FORGOT PASSWORD ──
+window.forgotPassword = async function() {
+  const email = $("l-email").value.trim();
+  if (!email) { showMsg("Escribe tu correo primero","error"); return; }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    showMsg("Revisa tu correo para restablecer la contraseña ✓","success");
+  } catch(e) {
+    showMsg(tradError(e.code),"error");
+  }
+};
+
+// ── HELPERS ──
+function setLoading(formId, loading) {
+  const btn = document.querySelector(`#${formId} .btn`);
+  if (btn) btn.classList.toggle("loading", loading);
+}
+
+function showMsg(txt, type) {
+  const el = $("auth-msg");
+  el.textContent = txt;
+  el.className = "msg" + (type ? " "+type : "");
+  if (!type) el.style.display = "none";
+}
+
+function tradError(code) {
+  const errores = {
+    "auth/user-not-found": "No existe una cuenta con ese correo",
+    "auth/wrong-password": "Contraseña incorrecta",
+    "auth/invalid-credential": "Correo o contraseña incorrectos",
+    "auth/email-already-in-use": "Este correo ya está registrado",
+    "auth/weak-password": "La contraseña es muy débil",
+    "auth/invalid-email": "El formato del correo no es válido",
+    "auth/too-many-requests": "Demasiados intentos. Espera unos minutos",
+    "auth/network-request-failed": "Sin conexión a internet",
+  };
+  return errores[code] || "Error: " + code;
+}
+</script>
+</body>
+</html>
