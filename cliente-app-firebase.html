@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>BarberOS — Reserva tu Turno</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Nunito:wght@400;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#f9f5ef; --warm:#f0e8d8; --tan:#e2d5c0; --brown:#8b6f47;
+  --dark-brown:#4a3520; --black:#1a1208; --red:#c0392b;
+  --gold:#c9972a; --gold2:#f0b429; --green:#27ae60; --green-bg:#edfaf4;
+  --white:#ffffff; --shadow:0 2px 16px rgba(74,53,32,.10);
+  --shadow-lg:0 8px 32px rgba(74,53,32,.16); --radius:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--cream);color:var(--black);font-family:'Nunito',sans-serif;min-height:100dvh}
+
+/* LOADER */
+.loader-overlay{position:fixed;inset:0;background:var(--dark-brown);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .4s}
+.loader-overlay.hide{opacity:0;pointer-events:none}
+.loader-logo{font-family:'Playfair Display',serif;font-size:30px;font-weight:900;color:white}
+.loader-logo span{color:var(--gold2)}
+.loader-bar{width:160px;height:3px;background:rgba(255,255,255,.2);border-radius:2px;overflow:hidden}
+.loader-fill{height:100%;background:var(--gold2);border-radius:2px;animation:fill 1.8s ease forwards}
+@keyframes fill{from{width:0}to{width:100%}}
+.loader-sub{font-size:12px;color:rgba(255,255,255,.6)}
+
+/* HERO */
+.hero{background:var(--dark-brown);position:relative;overflow:hidden}
+.hero-pattern{position:absolute;inset:0;opacity:.06;background-image:repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%);background-size:16px 16px}
+.hero-inner{position:relative;z-index:1;padding:20px 18px 24px}
+.hero-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.hero-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--white)}
+.hero-logo span{color:var(--gold2)}
+.hero-tag{background:var(--gold);color:var(--white);padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.hero-nombre{font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:var(--white);line-height:1.1;margin-bottom:6px}
+.hero-sub{font-size:13px;color:rgba(255,255,255,.65)}
+.hero-scissors{font-size:40px;position:absolute;right:20px;top:50%;transform:translateY(-50%);opacity:.15;pointer-events:none}
+
+/* NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--tan);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -4px 20px rgba(74,53,32,.08)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px;gap:3px;background:none;border:none;color:#b8a896;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:600;letter-spacing:.8px;transition:color .15s}
+.nav-btn.active{color:var(--dark-brown)}
+.nav-btn svg{width:20px;height:20px}
+
+/* MAIN */
+.main{padding:18px 16px 90px}
+.page{display:none}
+.page.active{display:block}
+.page-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--dark-brown);margin-bottom:4px}
+.page-sub{font-size:12px;color:var(--brown);margin-bottom:18px}
+
+/* CARDS */
+.card{background:var(--white);border-radius:var(--radius);padding:18px;margin-bottom:14px;box-shadow:var(--shadow);border:1px solid var(--warm)}
+.card-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--brown);margin-bottom:14px}
+
+/* BARBEROS */
+.barbero-list{display:flex;flex-direction:column;gap:10px}
+.barbero-opt{border:2px solid var(--warm);border-radius:14px;padding:14px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:12px;background:var(--white)}
+.barbero-opt.selected{border-color:var(--dark-brown);background:#f5f0e8}
+.b-ava{width:50px;height:50px;border-radius:50%;background:var(--dark-brown);color:var(--white);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display';font-size:20px;font-weight:700;flex-shrink:0}
+.b-name{font-size:15px;font-weight:700;color:var(--black)}
+.b-meta{font-size:12px;color:var(--brown);margin-top:2px}
+.b-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.b-chip{background:var(--warm);border-radius:20px;padding:2px 8px;font-size:10px;color:var(--dark-brown);font-weight:600}
+.b-check{margin-left:auto;width:24px;height:24px;border-radius:50%;border:2px solid var(--tan);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.barbero-opt.selected .b-check{background:var(--dark-brown);border-color:var(--dark-brown);color:white;font-size:13px}
+
+/* SERVICIOS */
+.servicio-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.servicio-card{border:2px solid var(--warm);border-radius:12px;padding:12px 10px;cursor:pointer;transition:all .15s;text-align:center;background:var(--white)}
+.servicio-card.selected{border-color:var(--gold);background:#fffbf0}
+.srv-icon{font-size:24px;margin-bottom:6px}
+.srv-name{font-size:12px;font-weight:700;color:var(--black);line-height:1.2}
+.srv-price{font-family:'Barlow Condensed';font-size:15px;font-weight:700;color:var(--gold);margin-top:4px}
+
+/* SLOTS */
+.slots-wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.slot{border:2px solid var(--tan);border-radius:10px;padding:9px 4px;text-align:center;font-family:'Barlow Condensed';font-size:13px;font-weight:700;cursor:pointer;transition:all .12s;color:var(--brown);background:var(--white)}
+.slot.libre{border-color:#a8d5b8;color:var(--green);background:#f2fbf6}
+.slot.ocupado{opacity:.35;cursor:not-allowed;background:var(--cream)}
+.slot.selected{background:var(--dark-brown);border-color:var(--dark-brown);color:white}
+
+/* RESUMEN */
+.resumen-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--warm)}
+.resumen-row:last-child{border-bottom:none}
+.res-label{font-size:12px;color:var(--brown);font-weight:600}
+.res-val{font-size:14px;font-weight:700;color:var(--black)}
+.res-val.gold{color:var(--gold)}
+
+/* FORMS */
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:11px;font-weight:700;color:var(--brown);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.form-input{width:100%;background:var(--cream);border:2px solid var(--tan);border-radius:10px;padding:12px 13px;color:var(--black);font-family:'Nunito',sans-serif;font-size:14px;transition:border-color .15s}
+.form-input:focus{outline:none;border-color:var(--dark-brown);background:var(--white)}
+
+/* BUTTONS */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;border-radius:12px;border:none;cursor:pointer;font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;transition:all .15s;width:100%}
+.btn-primary{background:var(--dark-brown);color:white}
+.btn-gold{background:var(--gold);color:white}
+.btn-outline{background:transparent;border:2px solid var(--tan);color:var(--brown)}
+.btn-wa{background:#25d366;color:white}
+.btn-sm{padding:9px 14px;font-size:13px;width:auto;border-radius:10px}
+
+/* STEPS */
+.steps{display:flex;align-items:center;gap:0;margin-bottom:20px}
+.step{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative}
+.step::after{content:'';position:absolute;top:14px;left:50%;width:100%;height:2px;background:var(--tan);z-index:0}
+.step:last-child::after{display:none}
+.step-dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--tan);background:var(--white);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--tan);z-index:1;position:relative;transition:all .2s}
+.step.done .step-dot{background:var(--dark-brown);border-color:var(--dark-brown);color:white}
+.step.active .step-dot{border-color:var(--gold);color:var(--gold);background:#fffbf0}
+.step-lbl{font-size:9px;font-weight:700;color:var(--tan);text-transform:uppercase}
+.step.done .step-lbl,.step.active .step-lbl{color:var(--dark-brown)}
+
+/* MIS TURNOS */
+.mi-turno{background:var(--white);border-radius:14px;margin-bottom:10px;box-shadow:var(--shadow);padding:14px 16px;border-left:4px solid var(--tan)}
+.mi-turno.espera{border-left-color:#f59e0b}
+.mi-turno.atencion{border-left-color:var(--red)}
+.mi-turno.listo{border-left-color:var(--green)}
+.mt-hora{font-family:'Barlow Condensed';font-size:22px;font-weight:700;color:var(--dark-brown)}
+.mt-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;margin-top:8px}
+.mb-espera{background:#fef3c7;color:#92400e}
+.mb-atencion{background:#fee2e2;color:var(--red)}
+.mb-listo{background:var(--green-bg);color:var(--green)}
+
+/* SUCCESS */
+.success-screen{display:none;text-align:center;padding:30px 10px}
+.success-screen.show{display:block}
+.success-icon{font-size:60px;margin-bottom:16px;animation:pop .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+.success-title{font-family:'Playfair Display';font-size:26px;font-weight:900;color:var(--dark-brown);margin-bottom:8px}
+.success-sub{font-size:14px;color:var(--brown);line-height:1.5}
+
+/* WIZARD */
+.wizard-step{display:none}
+.wizard-step.active{display:block}
+.step-header{font-family:'Playfair Display';font-size:18px;font-weight:700;color:var(--dark-brown);margin-bottom:14px}
+
+/* TOAST */
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-10px);background:var(--dark-brown);color:white;padding:10px 20px;border-radius:24px;font-size:13px;font-weight:700;z-index:300;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;box-shadow:var(--shadow-lg)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{background:var(--red)}
+
+/* PRECIOS */
+.precio-row{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--warm)}
+.precio-row:last-child{border-bottom:none}
+
+/* ESTADO LIVE */
+.live-badge{display:inline-flex;align-items:center;gap:5px;background:#edfaf4;color:var(--green);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;margin-bottom:14px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 1.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div class="loader-overlay" id="loader">
+  <div class="loader-logo">Barber<span>OS</span></div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+  <div class="loader-sub" id="loader-sub">Conectando…</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-pattern"></div>
+  <div class="hero-inner">
+    <div class="hero-top">
+      <div class="hero-logo">Barber<span>OS</span></div>
+      <span class="hero-tag">Para clientes</span>
+    </div>
+    <div style="position:relative">
+      <div class="hero-nombre" id="hero-nombre">Tu Barbería</div>
+      <div class="hero-sub">Reserva tu turno en segundos ✂</div>
+      <div class="hero-scissors">✂</div>
+    </div>
+  </div>
+</div>
+
+<main class="main">
+
+  <!-- AGENDAR -->
+  <section class="page active" id="page-agendar">
+    <div class="steps" id="steps-ui">
+      <div class="step active" id="st1"><div class="step-dot">1</div><div class="step-lbl">Barbero</div></div>
+      <div class="step" id="st2"><div class="step-dot">2</div><div class="step-lbl">Servicio</div></div>
+      <div class="step" id="st3"><div class="step-dot">3</div><div class="step-lbl">Hora</div></div>
+      <div class="step" id="st4"><div class="step-dot">4</div><div class="step-lbl">Confirmar</div></div>
+    </div>
+
+    <div id="wizard">
+      <!-- Paso 1 -->
+      <div class="wizard-step active" id="ws1">
+        <div class="step-header">¿Con quién quieres tu corte?</div>
+        <div class="live-badge"><div class="live-dot"></div>Disponibilidad en tiempo real</div>
+        <div class="barbero-list" id="barbero-list">
+          <div style="text-align:center;color:var(--brown);padding:30px;font-size:13px">Cargando barberos…</div>
+        </div>
+        <div style="margin-top:14px"><button class="btn btn-primary" onclick="wNext(1)">Siguiente →</button></div>
+      </div>
+
+      <!-- Paso 2 -->
+      <div class="wizard-step" id="ws2">
+        <div class="step-header">¿Qué servicio necesitas?</div>
+        <div class="servicio-grid" id="servicio-grid"></div>
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button class="btn btn-outline" onclick="wBack(2)">← Volver</button>
+          <button class="btn btn-primary" onclick="wNext(2)">Siguiente →</button>
+        </div>
+      </div>
+
+      <!-- Paso 3 -->
+      <div class="wizard-step" id="ws3">
+        <div class="step-header">Elige tu hora</div>
+        <div class="live-badge"><div class="live-dot"></div>Actualizado en vivo</div>
+        <div style="font-size:12px;color:var(--brown);margin-bottom:12px" id="turno-barbero-info"></div>
+        <div class="slots-wrap" id="hora-slots"></div>
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button class="btn btn-outline" onclick="wBack(3)">← Volver</button>
+          <button class="btn btn-primary" onclick="wNext(3)">Siguiente →</button>
+        </div>
+      </div>
+
+      <!-- Paso 4 -->
+      <div class="wizard-step" id="ws4">
+        <div class="step-header">Confirma tu turno</div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-title">Resumen</div>
+          <div id="resumen-data"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tu nombre completo</label>
+          <input type="text" class="form-input" id="cli-nom" placeholder="Ej: Andrés Torres">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Teléfono (WhatsApp)</label>
+          <input type="tel" class="form-input" id="cli-tel" placeholder="3001234567">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button class="btn btn-outline" style="flex:.4" onclick="wBack(4)">←</button>
+          <button class="btn btn-gold" style="flex:1" onclick="confirmarTurno()">✓ Confirmar Turno</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div class="success-screen" id="success-screen">
+      <div class="success-icon">✂️</div>
+      <div class="success-title">¡Turno Agendado!</div>
+      <div class="success-sub" id="success-msg"></div>
+      <div style="margin-top:24px;display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn-wa" id="btn-wa">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+          Confirmar por WhatsApp
+        </button>
+        <button class="btn btn-outline" onclick="resetWizard()">Agendar otro turno</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MIS TURNOS -->
+  <section class="page" id="page-mis-turnos">
+    <div class="page-title">Turnos de Hoy</div>
+    <div class="live-badge"><div class="live-dot"></div>Estado en tiempo real</div>
+    <div id="lista-mis-turnos">
+      <div style="text-align:center;color:var(--brown);padding:40px;font-size:13px">Cargando…</div>
+    </div>
+  </section>
+
+  <!-- SERVICIOS -->
+  <section class="page" id="page-servicios">
+    <div class="page-title">Servicios</div>
+    <div class="page-sub">Lista de precios</div>
+    <div class="card"><div id="lista-precios"></div></div>
+  </section>
+
+</main>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="navC('agendar',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>AGENDAR
+  </button>
+  <button class="nav-btn" onclick="navC('mis-turnos',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>MIS TURNOS
+  </button>
+  <button class="nav-btn" onclick="navC('servicios',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>SERVICIOS
+  </button>
+</nav>
+
+<!-- ══════════════════════════════════════════ -->
+<!--   🔥 FIREBASE SDK                         -->
+<!-- ══════════════════════════════════════════ -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, collection, doc, addDoc, onSnapshot,
+  query, where, orderBy, serverTimestamp, getDoc, updateDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ══════════════════════════════════════════
+// 🔧 MISMAS CREDENCIALES QUE LA APP BARBERO
+// ══════════════════════════════════════════
+const firebaseConfig = {
+  apiKey:            "AIzaSyCaKIEWgvtTMLkIPnIeHj3PrVQ9iodV5dI",
+  authDomain:        "barberos-pro.firebaseapp.com",
+  projectId:         "barberos-pro",
+  storageBucket:     "barberos-pro.firebasestorage.app",
+  messagingSenderId: "772002513976",
+  appId:             "1:772002513976:web:6cacb96069236dd8c6d2cd"
+};
+// ══════════════════════════════════════════
+
+const ICONOS = {"s1":"💈","s2":"✂️","s3":"🪒","s4":"💇","s5":"👦","s6":"🖊️","s7":"💆","s8":"🎨"};
+let SERVICIOS_CAT = [
+  {id:"s1",nombre:"Corte clásico",precio:20000,icon:"💈"},
+  {id:"s2",nombre:"Corte + barba",precio:35000,icon:"✂️"},
+  {id:"s3",nombre:"Arreglo barba",precio:18000,icon:"🪒"},
+  {id:"s4",nombre:"Degradado",precio:25000,icon:"💇"},
+  {id:"s5",nombre:"Corte infantil",precio:15000,icon:"👦"},
+  {id:"s6",nombre:"Diseño/líneas",precio:12000,icon:"🖊️"},
+  {id:"s7",nombre:"Keratina",precio:50000,icon:"💆"},
+  {id:"s8",nombre:"Color",precio:45000,icon:"🎨"},
+];
+const HORAS = ["08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30",
+               "12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30",
+               "16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30"];
+
+let barberos = [], turnosHoy = [], configData = {};
+let wBarberoId=null, wServicioId=null, wHora=null;
+
+const hoy = () => new Date().toISOString().split("T")[0];
+const fmtCOP = n => {
+  if (n>=1000000) return "$"+(n/1000000).toFixed(1)+"M";
+  if (n>=1000) return "$"+Math.round(n/1000)+"K";
+  return "$"+n;
+};
+const $ = id => document.getElementById(id);
+
+// ── INIT FIREBASE ──
+let db;
+try {
+  const app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+  $("loader-sub").textContent = "Cargando barbería…";
+  iniciarListeners();
+} catch(e) {
+  $("loader-sub").textContent = "Error de conexión";
+  setTimeout(() => $("loader").classList.add("hide"), 2000);
+}
+
+function iniciarListeners() {
+  // Config barbería
+  onSnapshot(doc(db,"config","barberia"), snap => {
+    if (snap.exists()) {
+      configData = snap.data();
+      $("hero-nombre").textContent = configData.nombre || "Tu Barbería";
+    }
+  });
+
+  // Servicios en tiempo real (precios editados por el barbero)
+  onSnapshot(collection(db,"servicios"), snap => {
+    if (!snap.empty) {
+      SERVICIOS_CAT = snap.docs.map(d => {
+        const data = d.data();
+        return {id:d.id, nombre:data.nombre, precio:data.precio, icon:ICONOS[d.id]||"✂️"};
+      }).sort((a,b)=>(a.orden||0)-(b.orden||0));
+      renderPreciosList();
+      if ($("ws2").classList.contains("active")) renderServicioGrid();
+    }
+  });
+
+  // Barberos en tiempo real
+  onSnapshot(collection(db,"barberos"), snap => {
+    barberos = snap.docs.map(d => ({id:d.id,...d.data()}));
+    renderBarberoList();
+    // Actualizar slots si estamos en paso 3
+    if ($("ws3").classList.contains("active")) renderHoraSlots();
+    setTimeout(() => $("loader").classList.add("hide"), 600);
+  });
+
+  // Turnos de hoy y próximos 2 días en tiempo real
+  const fechas = [0,1,2].map(d => { const f=new Date(); f.setDate(f.getDate()+d); return f.toISOString().split("T")[0]; });
+  const qT = query(collection(db,"turnos"), where("fecha","in",fechas));
+  onSnapshot(qT, snap => {
+    turnosHoy = snap.docs.map(d => ({id:d.id,...d.data()}));
+    if ($("ws3").classList.contains("active")) renderHoraSlots();
+    renderMisTurnos();
+  });
+}
+
+// ── NAVEGACIÓN ──
+window.navC = function(page, btn) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+  $("page-"+page).classList.add("active");
+  btn.classList.add("active");
+};
+
+// ── WIZARD ──
+window.wNext = function(from) {
+  if (from===1) { if(!wBarberoId){toast("Selecciona un barbero","err");return;} renderServicioGrid(); setStep(2); }
+  else if (from===2) { if(!wServicioId){toast("Selecciona un servicio","err");return;} renderHoraSlots(); setStep(3); }
+  else if (from===3) { if(!wHora){toast("Elige una hora","err");return;} renderResumen(); setStep(4); }
+};
+window.wBack = function(from) {
+  if(from===2) setStep(1);
+  else if(from===3) setStep(2);
+  else if(from===4) setStep(3);
+};
+
+function setStep(n) {
+  for(let i=1;i<=4;i++){
+    $("ws"+i).classList.toggle("active",i===n);
+    const st = $("st"+i);
+    st.className = "step"+(i<n?" done":(i===n?" active":""));
+  }
+}
+
+// ── PASO 1: BARBEROS ──
+function renderBarberoList() {
+  const cont = $("barbero-list");
+  if (!barberos.length) {
+    cont.innerHTML = '<div style="text-align:center;color:var(--brown);padding:30px;font-size:13px">La barbería aún no tiene barberos disponibles.</div>';
+    return;
+  }
+  cont.innerHTML = barberos.map(b => {
+    const toMin = t => {
+      if (!t) return 0;
+      const pm = /pm/i.test(t); const am = /am/i.test(t);
+      const clean = t.replace(/[apm\s]/gi,"");
+      let [h,m] = clean.split(":").map(Number);
+      if (isNaN(m)) m=0;
+      if (pm && h!==12) h+=12;
+      if (am && h===12) h=0;
+      return h*60+m;
+    };
+    const aperturaMin = toMin(configData?.open || "08:00");
+    const cierreMin   = toMin(configData?.close || "19:30");
+    const horasActivas = HORAS.filter(h => { const mm=toMin(h); return mm>=aperturaMin && mm<=cierreMin; });
+    const ocupados = turnosHoy.filter(t=>t.barberoId===b.id && t.estado!=="listo").length;
+    const libres = Math.max(0, horasActivas.length - ocupados);
+    const chips = (b.servicios||[]).slice(0,3).map(sid=>{
+      const s=SERVICIOS_CAT.find(x=>x.id===sid);
+      return s?`<span class="b-chip">${s.nombre}`:"";
+    }).join("");
+    return `<div class="barbero-opt${wBarberoId===b.id?" selected":""}" id="bopt-${b.id}" onclick="selBarbero('${b.id}')">
+      <div class="b-ava">${b.nombre[0]}</div>
+      <div style="flex:1">
+        <div class="b-name">${b.nombre}</div>
+        <div class="b-meta">${libres} horas disponibles hoy</div>
+        <div class="b-chips">${chips}</div>
+      </div>
+      <div class="b-check"${wBarberoId===b.id?' style="background:var(--dark-brown);border-color:var(--dark-brown);color:white"':""}>
+        ${wBarberoId===b.id?"✓":""}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+window.selBarbero = function(id) {
+  wBarberoId=id; wServicioId=null; wHora=null;
+  renderBarberoList();
+};
+
+// ── PASO 2: SERVICIOS ──
+function renderServicioGrid() {
+  const b = barberos.find(x=>x.id===wBarberoId);
+  const servs = (b?.servicios||[]).map(sid=>SERVICIOS_CAT.find(x=>x.id===sid)).filter(Boolean);
+  $("servicio-grid").innerHTML = servs.map(s=>
+    `<div class="servicio-card${wServicioId===s.id?" selected":""}" onclick="selServicio('${s.id}')">
+      <div class="srv-icon">${s.icon}</div>
+      <div class="srv-name">${s.nombre}</div>
+      <div class="srv-price">${fmtCOP(s.precio)}</div>
+    </div>`
+  ).join("");
+}
+
+window.selServicio = function(id) {
+  wServicioId=id;
+  document.querySelectorAll(".servicio-card").forEach(el=>el.classList.remove("selected"));
+  document.getElementById("scard-"+id)?.classList.add("selected");
+  // Rerender para marcar seleccionado
+  renderServicioGrid();
+};
+
+// ── PASO 3: HORAS ──
+let diaSeleccionado = 0; // 0=hoy, 1=mañana
+
+function renderHoraSlots() {
+  const b = barberos.find(x=>x.id===wBarberoId);
+
+  // Normaliza 12h o 24h a minutos
+  const toMin = t => {
+    if (!t) return 0;
+    const pm = /pm/i.test(t); const am = /am/i.test(t);
+    const clean = t.replace(/[apm\s]/gi,"");
+    let [h,m] = clean.split(":").map(Number);
+    if (isNaN(m)) m=0;
+    if (pm && h!==12) h+=12;
+    if (am && h===12) h=0;
+    return h*60+m;
+  };
+
+  const aperturaMin = toMin(configData?.open || "08:00");
+  const cierreMin   = toMin(configData?.close || "19:30");
+  const fmt = t => {
+    const [h,m] = t.split(":").map(Number);
+    const ap = h>=12?"pm":"am"; const h12 = h%12||12;
+    return h12+":"+(m<10?"0"+m:m)+" "+ap;
+  };
+
+  // Calcular la fecha del día seleccionado
+  const fechaBase = new Date();
+  fechaBase.setDate(fechaBase.getDate() + diaSeleccionado);
+  const fechaStr = fechaBase.toISOString().split("T")[0];
+  const esHoy = diaSeleccionado === 0;
+
+  // Turnos ocupados para ese día y barbero
+  const ocup = turnosHoy
+    .filter(t => t.barberoId===wBarberoId && t.fecha===fechaStr && t.estado!=="listo")
+    .map(t => t.hora);
+
+  const now = new Date();
+  const nowMin = esHoy ? now.getHours()*60+now.getMinutes() : -1;
+
+  // Filtrar horas dentro del horario
+  const horasFiltradas = HORAS.filter(h => {
+    const mm = toMin(h);
+    return mm >= aperturaMin && mm <= cierreMin;
+  });
+
+  // Verificar si quedan horas disponibles hoy
+  const hayHoysDisponibles = esHoy && horasFiltradas.some(h => {
+    const [hh,mm] = h.split(":").map(Number);
+    return hh*60+mm >= nowMin;
+  });
+
+  // Si es hoy y no quedan horas, mostrar mañana automáticamente
+  if (esHoy && !hayHoysDisponibles && diaSeleccionado === 0) {
+    diaSeleccionado = 1;
+    renderHoraSlots();
+    return;
+  }
+
+  // Selector de día
+  const dias = ["Hoy", "Mañana", "Pasado mañana"];
+  const fechaLabels = [0,1,2].map(d => {
+    const f = new Date(); f.setDate(f.getDate()+d);
+    const ds = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+    return `${dias[d]} (${ds[f.getDay()]} ${f.getDate()})`;
+  });
+
+  $("turno-barbero-info").innerHTML =
+    `<div style="margin-bottom:10px">
+      <b>${b?.nombre}</b> · Horario: ${fmt(configData?.open||"08:00")} – ${fmt(configData?.close||"19:30")}
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+      ${[0,1,2].map(d =>
+        `<button onclick="selDia(${d})" style="padding:6px 12px;border-radius:20px;border:1.5px solid ${d===diaSeleccionado?'var(--dark-brown)':'var(--tan)'};background:${d===diaSeleccionado?'var(--dark-brown)':'var(--white)'};color:${d===diaSeleccionado?'white':'var(--brown)'};font-size:11px;font-weight:700;cursor:pointer">
+          ${fechaLabels[d]}
+        </button>`
+      ).join("")}
+    </div>`;
+
+  $("hora-slots").innerHTML = horasFiltradas.map(h=>{
+    const [hh,mm] = h.split(":").map(Number);
+    const past = hh*60+mm < nowMin;
+    const occ = ocup.includes(h);
+    const cls = (past||occ) ? "ocupado" : (wHora===h ? "selected" : "libre");
+    const click = (!past&&!occ) ? `onclick="selHora(this,'${h}','${fechaStr}')"` : "";
+    return `<div class="slot ${cls}" ${click}>${h}</div>`;
+  }).join("");
+}
+
+window.selDia = function(d) {
+  diaSeleccionado = d; wHora = null;
+  renderHoraSlots();
+};
+
+let wFecha = null;
+window.selHora = function(el,h,fecha) {
+  document.querySelectorAll("#hora-slots .slot").forEach(s=>s.classList.remove("selected"));
+  el.classList.add("selected"); wHora=h; wFecha=fecha;
+};
+
+// ── PASO 4: RESUMEN ──
+function renderResumen() {
+  const b=barberos.find(x=>x.id===wBarberoId);
+  const s=SERVICIOS_CAT.find(x=>x.id===wServicioId);
+  $("resumen-data").innerHTML = `
+    <div class="resumen-row"><span class="res-label">Barbero</span><span class="res-val">${b?.nombre||"—"}</span></div>
+    <div class="resumen-row"><span class="res-label">Servicio</span><span class="res-val">${s?.nombre||"—"}</span></div>
+    <div class="resumen-row"><span class="res-label">Fecha</span><span class="res-val">${wFecha===hoy()?"Hoy":wFecha}</span></div>
+    <div class="resumen-row"><span class="res-label">Hora</span><span class="res-val">${wHora}</span></div>
+    <div class="resumen-row"><span class="res-label">Precio aprox.</span><span class="res-val gold">${fmtCOP(s?.precio||0)}</span></div>
+  `;
+}
+
+// ── CONFIRMAR TURNO ──
+window.confirmarTurno = async function() {
+  const nombre = $("cli-nom").value.trim();
+  const tel = $("cli-tel").value.trim();
+  if (!nombre) { toast("Ingresa tu nombre","err"); return; }
+
+  // Verificar que la hora sigue libre (puede haber cambiado)
+  const ocupadaAhora = turnosHoy.find(t=>t.barberoId===wBarberoId && t.hora===wHora && t.estado!=="listo");
+  if (ocupadaAhora) {
+    toast("Esa hora ya fue tomada, elige otra","err");
+    renderHoraSlots(); wHora=null; setStep(3); return;
+  }
+
+  // Guardar turno en Firestore
+  await addDoc(collection(db,"turnos"), {
+    cliente:nombre, tel, barberoId:wBarberoId, servicioId:wServicioId,
+    hora:wHora, fecha:wFecha||hoy(), estado:"espera",
+    creadoEn: serverTimestamp()
+  });
+
+  // Auto-registrar cliente
+  await addDoc(collection(db,"clientes"), {nombre, tel, barberoId:wBarberoId, visitas:0, creadoEn:serverTimestamp()});
+
+  // Notificar barbero por WhatsApp
+  const b = barberos.find(x=>x.id===wBarberoId);
+  const s = SERVICIOS_CAT.find(x=>x.id===wServicioId);
+  const waNum = b?.wa || configData?.wa;
+  const msg = `✂️ *Nuevo turno agendado*\n👤 Cliente: ${nombre}${tel?"\n📱 Tel: "+tel:""}\n💈 Servicio: ${s?.nombre}\n🕐 Hora: ${wHora}\n📅 Fecha: ${hoy()}`;
+  if (waNum) window.open(`https://wa.me/${waNum.replace(/\D/g,"")}?text=${encodeURIComponent(msg)}`,"_blank");
+
+  // Mostrar éxito
+  $("wizard").style.display="none";
+  $("steps-ui").style.display="none";
+  const ss=$("success-screen"); ss.classList.add("show");
+  $("success-msg").innerHTML = `<b>${nombre}</b>, te esperamos a las <b>${wHora}</b><br>con ${b?.nombre} · ${s?.nombre}`;
+
+  $("btn-wa").onclick = () => {
+    const share=`¡Agendé mi turno! ✂️\n${s?.nombre} a las ${wHora} con ${b?.nombre}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(share)}`,"_blank");
+  };
+};
+
+window.resetWizard = function() {
+  wBarberoId=null; wServicioId=null; wHora=null; wFecha=null; diaSeleccionado=0;
+  $("wizard").style.display=""; $("steps-ui").style.display="";
+  $("success-screen").classList.remove("show");
+  $("cli-nom").value=""; $("cli-tel").value="";
+  renderBarberoList(); setStep(1);
+};
+
+// ── MIS TURNOS ──
+function renderMisTurnos() {
+  const ts=[...turnosHoy].sort((a,b)=>a.hora.localeCompare(b.hora));
+  const labels={espera:"EN ESPERA",atencion:"✂ ATENDIENDO",listo:"✓ LISTO"};
+  const bcls={espera:"mb-espera",atencion:"mb-atencion",listo:"mb-listo"};
+  $("lista-mis-turnos").innerHTML = ts.length
+    ? ts.map(t=>{
+        const b=barberos.find(x=>x.id===t.barberoId);
+        const s=SERVICIOS_CAT.find(x=>x.id===t.servicioId);
+        return `<div class="mi-turno ${t.estado}">
+          <div class="mt-hora">${t.hora}</div>
+          <div style="font-size:14px;font-weight:700;margin-top:4px">${t.cliente}</div>
+          <div style="font-size:12px;color:var(--brown);margin-top:2px">${s?.nombre||"—"} · ${b?.nombre||"—"}</div>
+          <span class="mt-badge ${bcls[t.estado]}">${labels[t.estado]}</span>
+        </div>`;
+      }).join("")
+    : '<div style="text-align:center;color:var(--brown);padding:40px;font-size:13px">No hay turnos hoy todavía</div>';
+}
+
+// ── PRECIOS ──
+$("lista-precios").innerHTML = SERVICIOS_CAT.map(s=>
+  `<div class="precio-row">
+    <span style="font-size:20px;margin-right:10px">${s.icon}</span>
+    <span style="flex:1;font-size:14px;font-weight:600">${s.nombre}</span>
+    <span style="font-family:'Barlow Condensed';font-size:16px;font-weight:700;color:var(--gold)">${fmtCOP(s.precio)}</span>
+  </div>`
+).join("");
+
+// ── TOAST ──
+let toastT;
+window.toast = function(msg,type="") {
+  const el=$("toast");
+  el.textContent=msg; el.className="toast show"+(type?" "+type:"");
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("show"),2600);
+};
+</script>
+</body>
+</html>

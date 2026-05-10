@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>BarberOS — Panel del Barbero</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=DM+Sans:wght@400;500;600&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --white:#ffffff; --off:#f5f4f2; --light:#ebebeb; --mid:#c8c8c8;
+  --dark:#2a2a2a; --black:#111111; --red:#d72638; --red2:#ff3347;
+  --red-bg:#fff0f2; --green:#1a8c5a; --green-bg:#edfaf4; --radius:14px;
+  --shadow:0 2px 16px rgba(0,0,0,.08); --shadow-lg:0 8px 32px rgba(0,0,0,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--off);color:var(--black);font-family:'DM Sans',sans-serif;min-height:100dvh}
+
+/* LOADER */
+.loader-overlay{position:fixed;inset:0;background:var(--black);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s}
+.loader-overlay.hide{opacity:0;pointer-events:none}
+.loader-logo{font-family:'Oswald',sans-serif;font-size:32px;font-weight:700;color:white;letter-spacing:3px}
+.loader-logo span{color:var(--red)}
+.loader-bar{width:180px;height:3px;background:#333;border-radius:2px;overflow:hidden}
+.loader-fill{height:100%;background:var(--red);border-radius:2px;animation:fill 1.5s ease forwards}
+@keyframes fill{from{width:0}to{width:100%}}
+.loader-txt{font-size:12px;color:#666}
+
+/* HEADER */
+.header{background:var(--black);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.header-logo{font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:var(--white);letter-spacing:2px}
+.header-logo span{color:var(--red)}
+.header-right{display:flex;align-items:center;gap:10px}
+.header-date{font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--mid);text-align:right;line-height:1.3}
+.online-dot{width:8px;height:8px;border-radius:50%;background:#555;transition:background .3s}
+.online-dot.on{background:var(--green);box-shadow:0 0 0 3px rgba(26,140,90,.2)}
+
+/* NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1.5px solid var(--light);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -4px 20px rgba(0,0,0,.06)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px;gap:3px;background:none;border:none;color:var(--mid);cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:600;letter-spacing:.8px;transition:color .15s;position:relative}
+.nav-btn.active{color:var(--red)}
+.nav-btn svg{width:20px;height:20px}
+.nav-badge{position:absolute;top:6px;right:calc(50% - 16px);background:var(--red);color:white;font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+
+/* MAIN */
+.main{padding:16px 16px 90px}
+.page{display:none}
+.page.active{display:block}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.stat-box{background:var(--white);border-radius:var(--radius);padding:16px 14px;box-shadow:var(--shadow);border-top:3px solid transparent}
+.stat-box.red-top{border-top-color:var(--red)}
+.stat-box.black-top{border-top-color:var(--black)}
+.stat-val{font-family:'Oswald',sans-serif;font-size:32px;font-weight:700;color:var(--black);line-height:1}
+.stat-val.red{color:var(--red)}
+.stat-val.green{color:var(--green)}
+.stat-label{font-size:10px;color:var(--mid);font-weight:600;margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+
+/* CARDS */
+.card{background:var(--white);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{font-family:'Oswald',sans-serif;font-size:15px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 18px;border-radius:10px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;transition:all .15s;width:100%}
+.btn-red{background:var(--red);color:white}
+.btn-black{background:var(--black);color:white}
+.btn-outline{background:transparent;border:1.5px solid var(--light);color:var(--dark)}
+.btn-ghost{background:var(--off);color:var(--dark)}
+.btn-sm{padding:7px 13px;font-size:11px;width:auto;border-radius:8px}
+.btn-green-soft{background:var(--green-bg);color:var(--green)}
+.btn-red-soft{background:var(--red-bg);color:var(--red)}
+
+/* TURNOS */
+.turno-item{background:var(--white);border-radius:12px;margin-bottom:8px;box-shadow:var(--shadow);overflow:hidden;border-left:4px solid var(--light)}
+.turno-item.espera{border-left-color:#f59e0b}
+.turno-item.atencion{border-left-color:var(--red)}
+.turno-item.listo{border-left-color:var(--green);opacity:.75}
+.turno-inner{padding:12px 14px;display:flex;align-items:center;gap:12px}
+.turno-hora{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--black);min-width:50px;line-height:1}
+.turno-hora small{display:block;font-size:10px;color:var(--mid);font-weight:400;margin-top:1px}
+.turno-body{flex:1}
+.turno-nombre{font-size:14px;font-weight:600}
+.turno-meta{font-size:11px;color:var(--mid);margin-top:2px}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.5px}
+.badge-espera{background:#fef3c7;color:#92400e}
+.badge-atencion{background:var(--red-bg);color:var(--red)}
+.badge-listo{background:var(--green-bg);color:var(--green)}
+
+/* BARBEROS */
+.barbero-card{background:var(--white);border-radius:var(--radius);margin-bottom:10px;box-shadow:var(--shadow);overflow:hidden}
+.barbero-head{background:var(--black);padding:14px 16px;display:flex;align-items:center;gap:12px}
+.barbero-avatar{width:46px;height:46px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:white;flex-shrink:0}
+.barbero-name{font-family:'Oswald',sans-serif;font-size:17px;font-weight:600;color:white}
+.barbero-info{font-size:11px;color:var(--mid);margin-top:2px}
+.barbero-body{padding:14px 16px}
+.servicios-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.servicio-chip{background:var(--off);border:1px solid var(--light);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--dark)}
+.barbero-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.b-stat{text-align:center;background:var(--off);border-radius:8px;padding:8px 4px}
+.b-stat-val{font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:var(--black)}
+.b-stat-val.red{color:var(--red)}
+.b-stat-lbl{font-size:9px;color:var(--mid);text-transform:uppercase;font-weight:600;margin-top:1px}
+
+/* CAJA */
+.caja-hero{background:var(--black);border-radius:var(--radius);padding:22px 18px;margin-bottom:14px;position:relative;overflow:hidden}
+.caja-hero::before{content:'';position:absolute;right:-20px;top:-20px;width:100px;height:100px;border-radius:50%;background:var(--red);opacity:.15}
+.caja-monto{font-family:'Oswald',sans-serif;font-size:44px;font-weight:700;color:white;line-height:1}
+.caja-monto span{color:var(--red)}
+.caja-lbl{font-size:11px;color:var(--mid);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+.mov-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--light)}
+.mov-row:last-child{border-bottom:none}
+.mov-monto{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--green)}
+.mov-monto.egreso{color:var(--red)}
+.com-row{display:flex;align-items:center;padding:11px 0;border-bottom:1px solid var(--light);gap:10px}
+.com-row:last-child{border-bottom:none}
+.com-avatar{width:32px;height:32px;border-radius:50%;background:var(--black);display:flex;align-items:center;justify-content:center;font-family:'Oswald';font-size:13px;font-weight:700;color:white;flex-shrink:0}
+.com-val{font-family:'Barlow Condensed';font-size:17px;font-weight:700;color:var(--green);margin-left:auto}
+
+/* CLIENTES */
+.cliente-row{display:flex;align-items:center;padding:11px 0;border-bottom:1px solid var(--light);gap:10px}
+.cliente-row:last-child{border-bottom:none}
+.cli-avatar{width:38px;height:38px;border-radius:50%;background:var(--black);display:flex;align-items:center;justify-content:center;font-family:'Oswald';font-size:14px;font-weight:700;color:white;flex-shrink:0}
+.visits-pill{margin-left:auto;background:var(--red-bg);color:var(--red);padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+
+/* FORMS */
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:11px;font-weight:600;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.form-input{width:100%;background:var(--off);border:1.5px solid var(--light);border-radius:10px;padding:11px 13px;color:var(--black);font-family:'DM Sans',sans-serif;font-size:14px;transition:border-color .15s}
+.form-input:focus{outline:none;border-color:var(--red)}
+select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:20px 20px 0 0;padding:20px 16px 36px;width:100%;max-height:92dvh;overflow-y:auto;animation:slideUp .22s cubic-bezier(.32,.72,0,1)}
+@keyframes slideUp{from{transform:translateY(100%)}}
+.modal-handle{width:36px;height:4px;background:var(--light);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;letter-spacing:.5px;margin-bottom:18px}
+
+/* SLOTS */
+.slots-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.slot{background:var(--off);border:1.5px solid var(--light);border-radius:8px;padding:9px 4px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .12s;color:var(--dark)}
+.slot.libre{border-color:#d1fae5;color:var(--green);background:var(--green-bg)}
+.slot.ocupado{opacity:.4;cursor:not-allowed;color:var(--mid)}
+.slot.selected{background:var(--red);border-color:var(--red);color:white}
+
+/* TOAST */
+.toast{position:fixed;top:72px;left:50%;transform:translateX(-50%) translateY(-10px);background:var(--black);color:white;padding:10px 20px;border-radius:24px;font-size:13px;font-weight:600;z-index:300;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;box-shadow:var(--shadow-lg)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.success{background:var(--green)}
+.toast.error{background:var(--red)}
+
+/* NOTIF */
+.notif-bar{background:var(--red);color:white;padding:12px 16px;display:none;align-items:center;gap:10px;animation:slideDown .3s ease}
+.notif-bar.show{display:flex}
+@keyframes slideDown{from{transform:translateY(-100%)}}
+.notif-close{background:none;border:none;color:white;font-size:20px;cursor:pointer;margin-left:auto}
+
+/* TABS */
+.tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:7px 14px;border-radius:20px;border:1.5px solid var(--light);background:var(--white);color:var(--mid);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .12s}
+.tab.active{background:var(--black);border-color:var(--black);color:white}
+
+/* CONFIG */
+.config-box{background:var(--off);border-radius:10px;padding:12px;font-size:12px;color:var(--mid);word-break:break-all;margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div class="loader-overlay" id="loader">
+  <div class="loader-logo">Barber<span>OS</span></div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+  <div class="loader-txt" id="loader-txt">Conectando con Firebase…</div>
+</div>
+
+<!-- NOTIF NUEVO TURNO -->
+<div class="notif-bar" id="notif-bar">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+  <span id="notif-txt" style="font-size:13px;font-weight:600;flex:1">Nuevo turno</span>
+  <button class="notif-close" onclick="cerrarNotif()">×</button>
+</div>
+
+<header class="header">
+  <div class="header-logo">Barber<span>OS</span></div>
+  <div class="header-right">
+    <div class="header-date" id="hDate"></div>
+    <div class="online-dot" id="onlineDot"></div>
+  </div>
+</header>
+
+<div class="toast" id="toast"></div>
+
+<main class="main">
+
+  <section class="page active" id="page-home">
+    <div class="stats-row">
+      <div class="stat-box red-top"><div class="stat-val red" id="st-turnos">—</div><div class="stat-label">Turnos Hoy</div></div>
+      <div class="stat-box black-top"><div class="stat-val green" id="st-caja">—</div><div class="stat-label">Caja del Día</div></div>
+      <div class="stat-box"><div class="stat-val" id="st-espera">—</div><div class="stat-label">En Espera</div></div>
+      <div class="stat-box"><div class="stat-val" id="st-barberos">—</div><div class="stat-label">Barberos</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">Turnos Pendientes</span>
+        <button class="btn btn-red btn-sm" onclick="openModal('m-turno')">+ Turno</button>
+      </div>
+      <div id="db-turnos"><div style="color:var(--mid);font-size:13px;padding:16px;text-align:center">Cargando…</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">Equipo Hoy</span></div>
+      <div id="db-equipo"></div>
+    </div>
+  </section>
+
+  <section class="page" id="page-turnos">
+    <div class="tabs">
+      <button class="tab active" onclick="filterTab('todos',this)">Todos</button>
+      <button class="tab" onclick="filterTab('espera',this)">En Espera</button>
+      <button class="tab" onclick="filterTab('atencion',this)">Atendiendo</button>
+      <button class="tab" onclick="filterTab('listo',this)">Completados</button>
+    </div>
+    <button class="btn btn-red" onclick="openModal('m-turno')" style="margin-bottom:14px">+ Agendar Turno</button>
+    <div id="list-turnos"></div>
+  </section>
+
+  <section class="page" id="page-barberos">
+    <button class="btn btn-black" onclick="openModal('m-barbero')" style="margin-bottom:14px">+ Agregar Barbero</button>
+    <div id="list-barberos"></div>
+  </section>
+
+  <section class="page" id="page-caja">
+    <div class="caja-hero">
+      <div class="caja-lbl">Total Neto del Día</div>
+      <div class="caja-monto"><span>$</span><span id="caja-num">0</span></div>
+    </div>
+    <div class="stats-row" style="margin-bottom:14px">
+      <div class="stat-box"><div class="stat-val green" id="cj-ing">$0</div><div class="stat-label">Ingresos</div></div>
+      <div class="stat-box"><div class="stat-val red" id="cj-egr">$0</div><div class="stat-label">Egresos</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">Comisiones del Día</span></div>
+      <div id="list-com"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">Movimientos</span>
+        <button class="btn btn-outline btn-sm" onclick="openModal('m-egreso')">+ Egreso</button>
+      </div>
+      <div id="list-mov"></div>
+    </div>
+  </section>
+
+  <section class="page" id="page-clientes">
+    <input type="search" class="form-input" placeholder="Buscar cliente…" id="search-cli" oninput="renderClientes()" style="margin-bottom:14px">
+    <div id="list-clientes"></div>
+  </section>
+
+  <section class="page" id="page-config">
+    <div class="card">
+      <div class="card-head"><span class="card-title">Barbería</span></div>
+      <div class="form-group">
+        <label class="form-label">Nombre de la barbería</label>
+        <input type="text" class="form-input" id="cfg-nombre" placeholder="Mi BarberShop">
+      </div>
+      <div class="form-group">
+        <label class="form-label">WhatsApp recepción</label>
+        <input type="tel" class="form-input" id="cfg-wa" placeholder="573001234567">
+        <div style="font-size:11px;color:var(--mid);margin-top:4px">Código de país sin + · Ej: 573001234567</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Horario apertura</label>
+        <input type="time" class="form-input" id="cfg-open" value="08:00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Horario cierre</label>
+        <input type="time" class="form-input" id="cfg-close" value="19:30">
+      </div>
+      <button class="btn btn-black" onclick="guardarConfig()">Guardar configuración</button>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">Precios de Servicios</span>
+        <button class="btn btn-red btn-sm" onclick="agregarServicio()">+ Nuevo</button>
+      </div>
+      <div id="cfg-servicios-list"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">Firebase</span></div>
+      <div class="config-box" id="fb-status">Verificando conexión…</div>
+    </div>
+  </section>
+
+</main>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="nav('home',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>INICIO
+  </button>
+  <button class="nav-btn" onclick="nav('turnos',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>TURNOS
+  </button>
+  <button class="nav-btn" onclick="nav('barberos',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>EQUIPO
+  </button>
+  <button class="nav-btn" onclick="nav('caja',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg>CAJA
+  </button>
+  <button class="nav-btn" onclick="nav('clientes',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>CLIENTES
+  </button>
+  <button class="nav-btn" onclick="nav('config',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>CONFIG
+  </button>
+</nav>
+
+<!-- MODALES -->
+<div class="modal-overlay" id="m-turno">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Agendar Turno</div>
+    <div class="form-group"><label class="form-label">Cliente</label>
+      <input type="text" class="form-input" id="t-cli" placeholder="Nombre del cliente" list="dl-clis">
+      <datalist id="dl-clis"></datalist></div>
+    <div class="form-group"><label class="form-label">Teléfono</label>
+      <input type="tel" class="form-input" id="t-tel" placeholder="3001234567"></div>
+    <div class="form-group"><label class="form-label">Barbero</label>
+      <select class="form-input" id="t-barb" onchange="onChangeBarbero()"></select></div>
+    <div class="form-group"><label class="form-label">Servicio</label>
+      <select class="form-input" id="t-serv"></select></div>
+    <div class="form-group"><label class="form-label">Hora disponible</label>
+      <div class="slots-grid" id="t-slots"></div></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-outline" onclick="closeModal('m-turno')">Cancelar</button>
+      <button class="btn btn-red" onclick="agendarTurno()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-barbero">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nuevo Barbero</div>
+    <div class="form-group"><label class="form-label">Nombre</label>
+      <input type="text" class="form-input" id="b-nom" placeholder="Nombre completo"></div>
+    <div class="form-group"><label class="form-label">WhatsApp (con código país)</label>
+      <input type="tel" class="form-input" id="b-wa" placeholder="573001234567">
+      <div style="font-size:11px;color:var(--mid);margin-top:4px">Se le enviará notificación al agendar</div></div>
+    <div class="form-group"><label class="form-label">% Comisión</label>
+      <input type="number" class="form-input" id="b-com" placeholder="50" min="0" max="100"></div>
+    <div class="form-group"><label class="form-label">Servicios que ofrece</label>
+      <div id="b-servs" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px"></div></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-outline" onclick="closeModal('m-barbero')">Cancelar</button>
+      <button class="btn btn-black" onclick="guardarBarbero()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-egreso">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Registrar Egreso</div>
+    <div class="form-group"><label class="form-label">Descripción</label>
+      <input type="text" class="form-input" id="e-desc" placeholder="Ej: Compra de ceras"></div>
+    <div class="form-group"><label class="form-label">Monto (COP)</label>
+      <input type="number" class="form-input" id="e-mont" placeholder="0"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-outline" onclick="closeModal('m-egreso')">Cancelar</button>
+      <button class="btn btn-red" onclick="regEgreso()">Registrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-cobrar">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Cobrar Servicio</div>
+    <div id="cobrar-info" style="background:var(--off);border-radius:10px;padding:12px;font-size:13px;margin-bottom:16px;line-height:1.6"></div>
+    <div class="form-group"><label class="form-label">Monto a cobrar (COP)</label>
+      <input type="number" class="form-input" id="cob-monto" oninput="updateComPrev()"></div>
+    <div style="background:var(--green-bg);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--green);font-weight:600;margin-bottom:14px" id="cob-prev"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline" onclick="closeModal('m-cobrar')">Cancelar</button>
+      <button class="btn btn-green-soft" style="font-weight:700" onclick="cobrar()">✓ Confirmar Cobro</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--   🔥 FIREBASE SDK                         -->
+<!-- ══════════════════════════════════════════ -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, collection, doc, addDoc, updateDoc, deleteDoc,
+  onSnapshot, query, where, orderBy, serverTimestamp, getDocs, setDoc, getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ══════════════════════════════════════════
+// 🔧 REEMPLAZA AQUÍ TUS CREDENCIALES FIREBASE
+// ══════════════════════════════════════════
+const firebaseConfig = {
+  apiKey:            "AIzaSyCaKIEWgvtTMLkIPnIeHj3PrVQ9iodV5dI",
+  authDomain:        "barberos-pro.firebaseapp.com",
+  projectId:         "barberos-pro",
+  storageBucket:     "barberos-pro.firebasestorage.app",
+  messagingSenderId: "772002513976",
+  appId:             "1:772002513976:web:6cacb96069236dd8c6d2cd"
+};
+// ══════════════════════════════════════════
+
+// SERVICIOS se carga desde Firebase (editable por el barbero)
+// Valores por defecto (se usan si Firebase aún no tiene datos)
+let SERVICIOS = [
+  {id:"s1",nombre:"Corte clásico",precio:20000},
+  {id:"s2",nombre:"Corte + barba",precio:35000},
+  {id:"s3",nombre:"Arreglo barba",precio:18000},
+  {id:"s4",nombre:"Degradado",precio:25000},
+  {id:"s5",nombre:"Corte infantil",precio:15000},
+  {id:"s6",nombre:"Diseño/líneas",precio:12000},
+  {id:"s7",nombre:"Keratina",precio:50000},
+  {id:"s8",nombre:"Color",precio:45000},
+];
+const HORAS = ["08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30",
+               "12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30",
+               "16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30"];
+
+// Estado local (caché reactivo)
+let barberos = [], turnos = [], movimientos = [], clientes = [];
+let config = {};
+let filterActual = "todos";
+let turnoACobrar = null;
+let horaElegida = null;
+
+// Helpers
+const hoy = () => new Date().toISOString().split("T")[0];
+const fmtCOP = n => {
+  if (n >= 1000000) return "$" + (n/1000000).toFixed(1) + "M";
+  if (n >= 1000) return "$" + Math.round(n/1000) + "K";
+  return "$" + n;
+};
+const $ = id => document.getElementById(id);
+
+// ── FIREBASE INIT ──
+let db;
+try {
+  const app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+  $("fb-status").textContent = "✅ Conectado a Firebase Firestore";
+  $("onlineDot").classList.add("on");
+  $("loader-txt").textContent = "Cargando datos…";
+  iniciarListeners();
+} catch(e) {
+  $("fb-status").textContent = "❌ Error: revisa tus credenciales Firebase en el código.";
+  $("loader-txt").textContent = "Error de conexión";
+  setTimeout(() => $("loader").classList.add("hide"), 2000);
+}
+
+// ── LISTENERS EN TIEMPO REAL ──
+function iniciarListeners() {
+  // Barberos
+  onSnapshot(collection(db, "barberos"), snap => {
+    barberos = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    renderAll();
+  });
+
+  // Turnos de hoy
+  const qTurnos = query(collection(db, "turnos"), where("fecha", "==", hoy()));
+  let primeraTurnos = true;
+  onSnapshot(qTurnos, snap => {
+    const nuevos = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    // Detectar turno nuevo (no en primera carga)
+    if (!primeraTurnos) {
+      const ids = turnos.map(t => t.id);
+      const recientes = nuevos.filter(t => !ids.includes(t.id));
+      recientes.forEach(t => mostrarNotif(`📲 Nuevo turno: ${t.cliente} a las ${t.hora}`));
+      if (recientes.length) actualizarBadge(nuevos.filter(t => t.estado === "espera").length);
+    }
+    primeraTurnos = false;
+    turnos = nuevos;
+    renderAll();
+  });
+
+  // Movimientos de hoy
+  const qMov = query(collection(db, "movimientos"), where("fecha", "==", hoy()));
+  onSnapshot(qMov, snap => {
+    movimientos = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    renderAll();
+  });
+
+  // Clientes
+  onSnapshot(collection(db, "clientes"), snap => {
+    clientes = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    renderClientes();
+  });
+
+  // Servicios (editables)
+  onSnapshot(collection(db, "servicios"), snap => {
+    if (!snap.empty) {
+      SERVICIOS = snap.docs.map(d => ({id:d.id,...d.data()}))
+        .sort((a,b) => (a.orden||0)-(b.orden||0));
+      renderAll();
+      renderCfgServicios();
+    }
+  });
+
+  // Config
+  onSnapshot(doc(db, "config", "barberia"), snap => {
+    if (snap.exists()) {
+      config = snap.data();
+      if (config.nombre) $("cfg-nombre").value = config.nombre;
+      if (config.wa) $("cfg-wa").value = config.wa;
+      if (config.open) $("cfg-open").value = config.open;
+      if (config.close) $("cfg-close").value = config.close;
+    }
+    initServicios();
+    renderCfgServicios();
+    setTimeout(() => $("loader").classList.add("hide"), 800);
+  });
+}
+
+function renderAll() {
+  renderHome();
+  renderTurnos();
+  renderBarberos();
+  renderCaja();
+}
+
+// ── NAVEGACIÓN ──
+window.nav = function(page, btn) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+  $("page-" + page).classList.add("active");
+  btn.classList.add("active");
+};
+
+// ── HOME ──
+function renderHome() {
+  const h = hoy();
+  const th = turnos.filter(t => t.fecha === h);
+  const esp = th.filter(t => t.estado === "espera").length;
+  const ing = movimientos.filter(m => m.tipo === "ingreso").reduce((a,m) => a+m.monto, 0);
+  const egr = movimientos.filter(m => m.tipo === "egreso").reduce((a,m) => a+m.monto, 0);
+
+  $("st-turnos").textContent = th.length;
+  $("st-caja").textContent = fmtCOP(Math.max(0, ing - egr));
+  $("st-espera").textContent = esp;
+  $("st-barberos").textContent = barberos.length;
+
+  const pend = th.filter(t => t.estado !== "listo")
+    .sort((a,b) => a.hora.localeCompare(b.hora)).slice(0,5);
+  $("db-turnos").innerHTML = pend.length
+    ? pend.map(turnoCard).join("")
+    : '<div style="text-align:center;color:var(--mid);padding:20px;font-size:13px">Sin turnos pendientes</div>';
+
+  $("db-equipo").innerHTML = barberos.map(b => {
+    const pend = turnos.filter(t => t.barberoId === b.id && t.estado !== "listo").length;
+    const bruto = movimientos.filter(m => m.barberoId === b.id && m.tipo === "ingreso").reduce((a,m) => a+m.monto, 0);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--light)">
+      <div class="barbero-avatar" style="width:38px;height:38px;font-size:15px">${b.nombre[0]}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600">${b.nombre}</div>
+        <div style="font-size:11px;color:var(--mid)">${pend} pendientes · ${fmtCOP(bruto)} bruto</div>
+      </div>
+      <div style="font-family:'Barlow Condensed';font-size:16px;color:var(--green);font-weight:700">${fmtCOP(Math.round(bruto*(b.comision||0)/100))}</div>
+    </div>`;
+  }).join("") || '<div style="color:var(--mid);font-size:12px">Sin barberos</div>';
+}
+
+// ── TURNOS ──
+function turnoCard(t) {
+  const b = barberos.find(x => x.id === t.barberoId);
+  const s = SERVICIOS.find(x => x.id === t.servicioId);
+  const badges = {espera:"badge-espera",atencion:"badge-atencion",listo:"badge-listo"};
+  const labels = {espera:"EN ESPERA",atencion:"ATENDIENDO",listo:"✓ LISTO"};
+  let acc = "";
+  if (t.estado === "espera")
+    acc = `<button class="btn btn-ghost btn-sm" onclick="cambiarEstado('${t.id}','atencion')">✂ Iniciar</button>`;
+  else if (t.estado === "atencion")
+    acc = `<button class="btn btn-green-soft btn-sm" onclick="abrirCobrar('${t.id}')">$ Cobrar</button>`;
+  return `<div class="turno-item ${t.estado}">
+    <div class="turno-inner">
+      <div class="turno-hora">${t.hora}<small>HOY</small></div>
+      <div class="turno-body">
+        <div class="turno-nombre">${t.cliente}</div>
+        <div class="turno-meta">${s?.nombre||"—"} · ${b?.nombre||"—"}</div>
+        <div style="margin-top:6px"><span class="badge ${badges[t.estado]}">${labels[t.estado]}</span></div>
+        ${acc ? '<div style="margin-top:6px">'+acc+'</div>' : ""}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderTurnos() {
+  let ts = [...turnos];
+  if (filterActual !== "todos") ts = ts.filter(t => t.estado === filterActual);
+  ts.sort((a,b) => a.hora.localeCompare(b.hora));
+  $("list-turnos").innerHTML = ts.length
+    ? ts.map(turnoCard).join("")
+    : '<div style="text-align:center;color:var(--mid);padding:30px;font-size:13px">Sin turnos</div>';
+}
+
+window.filterTab = function(f, btn) {
+  filterActual = f;
+  document.querySelectorAll("#page-turnos .tab").forEach(t => t.classList.remove("active"));
+  btn.classList.add("active");
+  renderTurnos();
+};
+
+window.cambiarEstado = async function(id, estado) {
+  await updateDoc(doc(db, "turnos", id), {estado});
+  toast("Estado actualizado");
+};
+
+window.abrirCobrar = function(id) {
+  turnoACobrar = id;
+  const t = turnos.find(t => t.id === id);
+  const b = barberos.find(x => x.id === t?.barberoId);
+  const s = SERVICIOS.find(x => x.id === t?.servicioId);
+  $("cobrar-info").innerHTML = `<b>${t?.cliente}</b><br>${s?.nombre} · ${b?.nombre} · ${b?.comision||0}% comisión`;
+  $("cob-monto").value = s?.precio || "";
+  updateComPrev();
+  openModal("m-cobrar");
+};
+
+window.updateComPrev = function() {
+  if (!turnoACobrar) return;
+  const t = turnos.find(t => t.id === turnoACobrar);
+  const b = barberos.find(x => x.id === t?.barberoId);
+  const m = parseInt($("cob-monto").value)||0;
+  const com = Math.round(m*(b?.comision||0)/100);
+  $("cob-prev").textContent = `Comisión ${b?.nombre}: ${fmtCOP(com)} · Para la caja: ${fmtCOP(m-com)}`;
+};
+
+window.cobrar = async function() {
+  const monto = parseInt($("cob-monto").value)||0;
+  if (!monto) { toast("Ingresa el monto","error"); return; }
+  const t = turnos.find(t => t.id === turnoACobrar);
+  const b = barberos.find(x => x.id === t?.barberoId);
+  const s = SERVICIOS.find(x => x.id === t?.servicioId);
+  const com = Math.round(monto*(b?.comision||0)/100);
+  await updateDoc(doc(db, "turnos", turnoACobrar), {estado:"listo", monto});
+  await addDoc(collection(db, "movimientos"), {
+    tipo:"ingreso", monto, fecha:hoy(),
+    desc:`${s?.nombre} · ${t?.cliente}`,
+    barberoId: t?.barberoId, comision:com,
+    hora: new Date().toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"}),
+    creadoEn: serverTimestamp()
+  });
+  // Sumar visita al cliente
+  const cli = clientes.find(c => c.nombre?.toLowerCase() === t?.cliente?.toLowerCase());
+  if (cli) await updateDoc(doc(db, "clientes", cli.id), {visitas: (cli.visitas||0)+1});
+  closeModal("m-cobrar");
+  toast(`✓ Cobrado ${fmtCOP(monto)}`,"success");
+};
+
+// ── MODAL TURNO ──
+window.openModal = function(id) {
+  $(id).classList.add("open");
+  if (id === "m-turno") initModalTurno();
+  if (id === "m-barbero") initModalBarbero();
+};
+window.closeModal = function(id) {
+  $(id).classList.remove("open");
+  horaElegida = null;
+};
+
+function initModalTurno() {
+  $("t-barb").innerHTML = barberos.map(b => `<option value="${b.id}">${b.nombre}</option>`).join("");
+  onChangeBarbero();
+  $("dl-clis").innerHTML = clientes.map(c => `<option value="${c.nombre}">`).join("");
+  renderSlots();
+}
+
+window.onChangeBarbero = function() {
+  const bId = $("t-barb").value;
+  const b = barberos.find(x => x.id === bId);
+  $("t-serv").innerHTML = (b?.servicios||[]).map(sid => {
+    const s = SERVICIOS.find(x => x.id === sid);
+    return s ? `<option value="${s.id}">${s.nombre} — ${fmtCOP(s.precio)}</option>` : "";
+  }).join("");
+  renderSlots();
+};
+
+function renderSlots() {
+  const bId = $("t-barb").value;
+  const ocup = turnos.filter(t => t.barberoId === bId && t.fecha === hoy() && t.estado !== "listo").map(t => t.hora);
+  const now = new Date(); const nowMin = now.getHours()*60 + now.getMinutes();
+  $("t-slots").innerHTML = HORAS.map(h => {
+    const [hh,mm] = h.split(":").map(Number);
+    const past = hh*60+mm < nowMin;
+    const occ = ocup.includes(h);
+    const cls = (past||occ) ? "ocupado" : (horaElegida===h ? "selected" : "libre");
+    const click = (!past&&!occ) ? `onclick="selSlot(this,'${h}')"` : "";
+    return `<div class="slot ${cls}" ${click}>${h}</div>`;
+  }).join("");
+}
+
+window.selSlot = function(el, h) {
+  document.querySelectorAll(".slot").forEach(s => s.classList.remove("selected"));
+  el.classList.add("selected"); horaElegida = h;
+};
+
+window.agendarTurno = async function() {
+  const cli = $("t-cli").value.trim();
+  const tel = $("t-tel").value.trim();
+  const bId = $("t-barb").value;
+  const sId = $("t-serv").value;
+  if (!cli) { toast("Escribe el nombre del cliente","error"); return; }
+  if (!horaElegida) { toast("Elige una hora","error"); return; }
+
+  await addDoc(collection(db, "turnos"), {
+    cliente:cli, tel, barberoId:bId, servicioId:sId,
+    hora:horaElegida, fecha:hoy(), estado:"espera",
+    creadoEn: serverTimestamp()
+  });
+
+  // Auto-registrar cliente si no existe
+  if (!clientes.find(c => c.nombre?.toLowerCase() === cli.toLowerCase())) {
+    await addDoc(collection(db, "clientes"), {nombre:cli, tel, barberoId:bId, visitas:0, creadoEn:serverTimestamp()});
+  }
+
+  // Notificar barbero por WhatsApp
+  const b = barberos.find(x => x.id === bId);
+  const s = SERVICIOS.find(x => x.id === sId);
+  if (b?.wa) {
+    const msg = encodeURIComponent(`✂️ *Nuevo turno agendado*\n👤 Cliente: ${cli}\n💈 Servicio: ${s?.nombre}\n🕐 Hora: ${horaElegida}\n📅 Fecha: ${hoy()}`);
+    setTimeout(() => {
+      if (confirm(`¿Notificar a ${b.nombre} por WhatsApp?`))
+        window.open(`https://wa.me/${b.wa.replace(/\D/g,"")}?text=${msg}`, "_blank");
+    }, 300);
+  }
+
+  horaElegida = null;
+  closeModal("m-turno");
+  toast("Turno confirmado ✓","success");
+};
+
+// ── BARBEROS ──
+function initModalBarbero() {
+  $("b-servs").innerHTML = SERVICIOS.map(s =>
+    `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;background:var(--off);padding:6px 10px;border-radius:6px;border:1px solid var(--light)">
+      <input type="checkbox" value="${s.id}" style="accent-color:var(--red)">
+      <span style="font-size:12px">${s.nombre}</span>
+    </label>`
+  ).join("");
+}
+
+window.guardarBarbero = async function() {
+  const nom = $("b-nom").value.trim();
+  const wa = $("b-wa").value.trim();
+  const com = parseInt($("b-com").value)||50;
+  const servs = [...document.querySelectorAll("#b-servs input:checked")].map(i => i.value);
+  if (!nom) { toast("Ingresa el nombre","error"); return; }
+  await addDoc(collection(db, "barberos"), {nombre:nom, wa, comision:com, servicios:servs, activo:true});
+  closeModal("m-barbero");
+  toast("Barbero registrado ✓","success");
+};
+
+window.elimBarbero = async function(id) {
+  if (confirm("¿Eliminar barbero?")) {
+    await deleteDoc(doc(db, "barberos", id));
+    toast("Barbero eliminado");
+  }
+};
+
+function renderBarberos() {
+  $("list-barberos").innerHTML = barberos.length
+    ? barberos.map(b => {
+        const turnosHoy = turnos.filter(t => t.barberoId === b.id).length;
+        const bruto = movimientos.filter(m => m.barberoId === b.id && m.tipo === "ingreso").reduce((a,m) => a+m.monto, 0);
+        const com = Math.round(bruto*(b.comision||0)/100);
+        const chips = (b.servicios||[]).map(sid => {
+          const s = SERVICIOS.find(x => x.id === sid);
+          return s ? `<span class="servicio-chip">${s.nombre}</span>` : "";
+        }).join("");
+        return `<div class="barbero-card">
+          <div class="barbero-head">
+            <div class="barbero-avatar">${b.nombre[0]}</div>
+            <div style="flex:1">
+              <div class="barbero-name">${b.nombre}</div>
+              <div class="barbero-info">${b.comision||0}% comisión · WA: ${b.wa||"—"}</div>
+            </div>
+            <button class="btn btn-outline btn-sm" style="color:var(--red);border-color:#fca5a5;width:auto" onclick="elimBarbero('${b.id}')">✕</button>
+          </div>
+          <div class="barbero-body">
+            <div class="servicios-wrap">${chips||'<span style="font-size:12px;color:var(--mid)">Sin servicios</span>'}</div>
+            <div class="barbero-stats">
+              <div class="b-stat"><div class="b-stat-val">${turnosHoy}</div><div class="b-stat-lbl">Turnos</div></div>
+              <div class="b-stat"><div class="b-stat-val">${fmtCOP(bruto)}</div><div class="b-stat-lbl">Bruto</div></div>
+              <div class="b-stat"><div class="b-stat-val red">${fmtCOP(com)}</div><div class="b-stat-lbl">Comisión</div></div>
+            </div>
+          </div>
+        </div>`;
+      }).join("")
+    : '<div style="text-align:center;color:var(--mid);padding:30px">Sin barberos registrados</div>';
+}
+
+// ── CAJA ──
+function renderCaja() {
+  const ing = movimientos.filter(m => m.tipo === "ingreso").reduce((a,m) => a+m.monto, 0);
+  const egr = movimientos.filter(m => m.tipo === "egreso").reduce((a,m) => a+m.monto, 0);
+  $("caja-num").textContent = Math.max(0, ing-egr).toLocaleString("es-CO");
+  $("cj-ing").textContent = fmtCOP(ing);
+  $("cj-egr").textContent = fmtCOP(egr);
+
+  $("list-com").innerHTML = barberos.map(b => {
+    const bIng = movimientos.filter(m => m.barberoId === b.id && m.tipo === "ingreso").reduce((a,m) => a+m.monto, 0);
+    const com = Math.round(bIng*(b.comision||0)/100);
+    return `<div class="com-row">
+      <div class="com-avatar">${b.nombre[0]}</div>
+      <div><div style="font-size:13px;font-weight:600">${b.nombre}</div>
+      <div style="font-size:11px;color:var(--mid)">Bruto ${fmtCOP(bIng)} · ${b.comision||0}%</div></div>
+      <div class="com-val">${fmtCOP(com)}</div>
+    </div>`;
+  }).join("") || '<div style="color:var(--mid);font-size:12px">Sin datos</div>';
+
+  const movs = [...movimientos].reverse();
+  $("list-mov").innerHTML = movs.length
+    ? movs.map(m => `<div class="mov-row">
+        <div><div style="font-size:13px;font-weight:500">${m.desc}</div>
+        <div style="font-size:11px;color:var(--mid)">${m.hora||""}</div></div>
+        <div class="mov-monto ${m.tipo==="egreso"?"egreso":""}">${m.tipo==="egreso"?"−":"+"}${fmtCOP(m.monto)}</div>
+      </div>`).join("")
+    : '<div style="color:var(--mid);font-size:12px;padding:8px 0">Sin movimientos</div>';
+}
+
+window.regEgreso = async function() {
+  const desc = $("e-desc").value.trim();
+  const monto = parseInt($("e-mont").value)||0;
+  if (!desc||!monto) { toast("Completa los campos","error"); return; }
+  await addDoc(collection(db,"movimientos"), {
+    tipo:"egreso", monto, fecha:hoy(), desc,
+    hora: new Date().toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"}),
+    creadoEn: serverTimestamp()
+  });
+  closeModal("m-egreso");
+  toast("Egreso registrado");
+};
+
+// ── CLIENTES ──
+window.renderClientes = function() {
+  const q = ($("search-cli")?.value||"").toLowerCase();
+  let cs = clientes;
+  if (q) cs = cs.filter(c => c.nombre?.toLowerCase().includes(q)||(c.tel||"").includes(q));
+  cs.sort((a,b) => (b.visitas||0)-(a.visitas||0));
+  $("list-clientes").innerHTML = cs.length
+    ? `<div class="card" style="padding:6px 14px">`+cs.map(c => {
+        const b = barberos.find(x => x.id === c.barberoId);
+        const ini = (c.nombre||"?").split(" ").map(n=>n[0]).slice(0,2).join("").toUpperCase();
+        return `<div class="cliente-row">
+          <div class="cli-avatar">${ini}</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:600">${c.nombre}</div>
+            <div style="font-size:11px;color:var(--mid)">${c.tel||"Sin tel"} · ${b?.nombre||"Sin barbero"}</div>
+          </div>
+          <span class="visits-pill">${c.visitas||0} visitas</span>
+        </div>`;
+      }).join("")+`</div>`
+    : '<div style="text-align:center;color:var(--mid);padding:30px">Sin clientes</div>';
+};
+
+// ── SERVICIOS CONFIG ──
+function renderCfgServicios() {
+  const cont = $("cfg-servicios-list");
+  if (!cont) return;
+  cont.innerHTML = SERVICIOS.map((s,i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--light)">
+      <div style="flex:1">
+        <input type="text" value="${s.nombre}" 
+          style="width:100%;background:var(--off);border:1.5px solid var(--light);border-radius:8px;padding:7px 10px;font-family:'DM Sans',sans-serif;font-size:13px;margin-bottom:4px"
+          onchange="actualizarServicio('${s.id}','nombre',this.value)">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:11px;color:var(--mid);font-weight:600">$</span>
+          <input type="number" value="${s.precio}"
+            style="width:110px;background:var(--off);border:1.5px solid var(--light);border-radius:8px;padding:6px 10px;font-family:'DM Sans',sans-serif;font-size:13px"
+            onchange="actualizarServicio('${s.id}','precio',parseInt(this.value)||0)">
+          <span style="font-size:11px;color:var(--mid)">COP</span>
+        </div>
+      </div>
+      <button onclick="eliminarServicio('${s.id}')"
+        style="background:none;border:none;color:#fca5a5;font-size:20px;cursor:pointer;padding:4px;line-height:1;flex-shrink:0">✕</button>
+    </div>`
+  ).join("") || '<div style="color:var(--mid);font-size:13px;padding:10px 0">Sin servicios</div>';
+}
+
+window.actualizarServicio = async function(id, campo, valor) {
+  await updateDoc(doc(db,"servicios",id), {[campo]: valor});
+  toast("Precio actualizado ✓","success");
+};
+
+window.eliminarServicio = async function(id) {
+  if (confirm("¿Eliminar este servicio?")) {
+    await deleteDoc(doc(db,"servicios",id));
+    toast("Servicio eliminado");
+  }
+};
+
+window.agregarServicio = async function() {
+  const nombre = prompt("Nombre del nuevo servicio:");
+  if (!nombre?.trim()) return;
+  const precioStr = prompt("Precio en COP (solo números):");
+  const precio = parseInt(precioStr)||0;
+  await addDoc(collection(db,"servicios"), {
+    nombre: nombre.trim(), precio, orden: SERVICIOS.length
+  });
+  toast("Servicio agregado ✓","success");
+};
+
+// Inicializar servicios en Firebase si es la primera vez
+async function initServicios() {
+  const snap = await getDocs(collection(db,"servicios"));
+  if (snap.empty) {
+    const batch = SERVICIOS.map((s,i) =>
+      setDoc(doc(db,"servicios",s.id), {nombre:s.nombre, precio:s.precio, orden:i})
+    );
+    await Promise.all(batch);
+    console.log("Servicios inicializados en Firebase");
+  }
+}
+
+// ── CONFIG ──
+window.guardarConfig = async function() {
+  await setDoc(doc(db,"config","barberia"), {
+    nombre: $("cfg-nombre").value,
+    wa: $("cfg-wa").value,
+    open: $("cfg-open").value,
+    close: $("cfg-close").value,
+  });
+  toast("Configuración guardada ✓","success");
+};
+
+// ── UTILS ──
+document.querySelectorAll(".modal-overlay").forEach(m =>
+  m.addEventListener("click", e => { if (e.target===m) closeModal(m.id); })
+);
+
+let toastT;
+window.toast = function(msg, type="") {
+  const el = $("toast");
+  el.textContent = msg;
+  el.className = "toast show" + (type?" "+type:"");
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove("show"), 2600);
+};
+
+window.mostrarNotif = function(txt) {
+  $("notif-txt").textContent = txt;
+  $("notif-bar").classList.add("show");
+  setTimeout(cerrarNotif, 6000);
+};
+window.cerrarNotif = function() { $("notif-bar").classList.remove("show"); };
+
+window.actualizarBadge = function(n) {
+  let b = document.querySelector("#navTurnos .nav-badge");
+  if (!b && n>0) {
+    b = document.createElement("div");
+    b.className = "nav-badge"; b.id = "navTurnos";
+    document.querySelector('.nav-btn:nth-child(2)').appendChild(b);
+  }
+  if (b) b.textContent = n > 0 ? n : "";
+};
+
+function updateClock() {
+  const d = new Date();
+  const dias=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+  $("hDate").innerHTML = `${dias[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}<br>${d.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"})}`;
+}
+updateClock(); setInterval(updateClock, 30000);
+</script>
+</body>
+</html>
