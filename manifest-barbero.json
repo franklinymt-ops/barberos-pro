@@ -1,0 +1,25 @@
+{
+  "name": "BarberOS Panel",
+  "short_name": "BarberOS",
+  "description": "Panel de gestión para barberías",
+  "start_url": "/barberos-pro/barbero-app-firebase.html",
+  "display": "standalone",
+  "background_color": "#0a0a0b",
+  "theme_color": "#d4a843",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["business","productivity"],
+  "lang": "es"
+}
