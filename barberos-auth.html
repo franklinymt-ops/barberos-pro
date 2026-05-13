@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="manifest-barbero.json">
+<meta name="theme-color" content="#d4a843">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BarberOS">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BarberOS</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Sora:wght@300;400;500;600;700&family=Barlow+Condensed:wght@600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080809;--card:rgba(14,15,18,.92);--border:rgba(212,168,67,.18);
+  --gold:#d4a843;--gold2:#f0c060;--gold-dim:rgba(212,168,67,.1);
+  --white:#f0ede8;--muted:#6b6f7a;--muted2:#9a9eaa;
+  --green:#22c55e;--red:#ef4444;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--white);font-family:'Sora',sans-serif;min-height:100dvh;display:flex;flex-direction:column}
+
+/* ── HERO BG ── */
+.hero-bg{
+  position:fixed;inset:0;z-index:0;
+  background:
+    linear-gradient(to bottom, rgba(8,8,9,.3) 0%, rgba(8,8,9,.7) 50%, rgba(8,8,9,.97) 100%),
+    url('https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&q=80') center/cover no-repeat;
+}
+.hero-noise{position:fixed;inset:0;z-index:0;opacity:.04;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* ── SCROLL WRAP ── */
+.wrap{position:relative;z-index:1;flex:1;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:0 20px 40px;scrollbar-width:none}
+.wrap::-webkit-scrollbar{display:none}
+
+/* ── LOGO BLOCK ── */
+.logo-block{text-align:center;padding:48px 0 28px;width:100%;max-width:360px}
+.logo-circle{
+  width:110px;height:110px;border-radius:50%;
+  background:linear-gradient(135deg,rgba(212,168,67,.15),rgba(212,168,67,.05));
+  border:2px solid rgba(212,168,67,.4);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 16px;
+  box-shadow:0 0 40px rgba(212,168,67,.15), inset 0 0 30px rgba(212,168,67,.05);
+  position:relative;overflow:hidden;
+}
+.logo-circle::before{
+  content:'';position:absolute;inset:6px;border-radius:50%;
+  border:1px solid rgba(212,168,67,.2);
+}
+.logo-scissors{font-size:44px;filter:drop-shadow(0 0 12px rgba(212,168,67,.5))}
+.logo-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:32px;font-weight:700;letter-spacing:4px;
+  color:var(--white);line-height:1;
+}
+.logo-name span{color:var(--gold)}
+.logo-since{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:10px;letter-spacing:4px;color:rgba(212,168,67,.6);
+  text-transform:uppercase;margin-top:6px;
+}
+.logo-tagline{
+  font-family:'Cormorant Garamond',serif;
+  font-style:italic;font-size:14px;color:var(--muted2);
+  margin-top:8px;letter-spacing:1px;
+}
+
+/* ── AUTH CARD ── */
+.auth-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:24px;
+  padding:28px 24px;
+  width:100%;max-width:360px;
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  box-shadow:0 24px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(212,168,67,.06);
+}
+.card-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:22px;font-weight:700;text-align:center;
+  color:var(--white);margin-bottom:4px;
+}
+.card-sub{font-size:12px;color:var(--muted2);text-align:center;margin-bottom:20px}
+.card-divider{width:40px;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:0 auto 20px}
+
+/* ── TABS ── */
+.tabs{display:flex;background:rgba(0,0,0,.3);border-radius:10px;padding:3px;margin-bottom:20px;border:1px solid rgba(255,255,255,.06)}
+.tab{flex:1;padding:9px;border-radius:8px;border:none;background:none;color:var(--muted2);font-family:'Sora',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.3px}
+.tab.active{background:rgba(212,168,67,.15);color:var(--gold);border:1px solid rgba(212,168,67,.25)}
+
+/* ── MÉTODO ── */
+.method-tabs{display:flex;gap:6px;margin-bottom:16px}
+.mtab{flex:1;padding:8px;border-radius:8px;border:1.5px solid rgba(255,255,255,.08);background:rgba(0,0,0,.2);color:var(--muted2);font-family:'Sora',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:5px}
+.mtab.active{border-color:rgba(212,168,67,.4);background:var(--gold-dim);color:var(--gold)}
+
+/* ── FORM ── */
+.fg{margin-bottom:14px;position:relative}
+.fi-wrap{position:relative;display:flex;align-items:center}
+.fi-icon{position:absolute;left:13px;color:var(--muted);font-size:15px;pointer-events:none}
+.fi{
+  width:100%;background:rgba(0,0,0,.3);
+  border:1.5px solid rgba(255,255,255,.08);
+  border-radius:10px;padding:12px 13px 12px 40px;
+  color:var(--white);font-family:'Sora',sans-serif;font-size:14px;
+  transition:all .2s;
+}
+.fi:focus{outline:none;border-color:rgba(212,168,67,.5);background:rgba(0,0,0,.4);box-shadow:0 0 0 3px rgba(212,168,67,.08)}
+.fi::placeholder{color:var(--muted)}
+.fi-eye{position:absolute;right:12px;color:var(--muted);cursor:pointer;font-size:16px;background:none;border:none;padding:4px}
+
+/* PHONE ROW */
+.phone-row{display:flex;gap:6px}
+.country-sel{width:72px;background:rgba(0,0,0,.3);border:1.5px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 6px;color:var(--white);font-family:'Sora',sans-serif;font-size:13px;text-align:center;transition:border-color .2s;-webkit-appearance:none}
+.country-sel:focus{outline:none;border-color:rgba(212,168,67,.5)}
+
+/* FORGOT */
+.forgot{display:block;text-align:right;font-size:11px;color:var(--gold);text-decoration:none;margin-top:-8px;margin-bottom:14px;cursor:pointer;transition:opacity .15s}
+.forgot:hover{opacity:.7}
+
+/* TRIAL BADGE */
+.trial-badge{
+  display:flex;align-items:flex-start;gap:10px;
+  background:rgba(212,168,67,.06);border:1px solid rgba(212,168,67,.2);
+  border-radius:12px;padding:12px;margin-bottom:18px;
+}
+.trial-txt{font-size:12px;color:var(--gold2);font-weight:600;line-height:1.5}
+.trial-txt span{color:var(--muted2);font-weight:400}
+
+/* ── BUTTONS ── */
+.btn{
+  width:100%;padding:14px;border-radius:11px;border:none;cursor:pointer;
+  font-family:'Sora',sans-serif;font-size:14px;font-weight:700;
+  transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;
+  position:relative;letter-spacing:.3px;
+}
+.btn-gold{
+  background:linear-gradient(135deg,#d4a843 0%,#c49030 50%,#d4a843 100%);
+  background-size:200% 100%;color:#000;
+  box-shadow:0 4px 20px rgba(212,168,67,.3);
+}
+.btn-gold:hover{background-position:100% 0;box-shadow:0 6px 28px rgba(212,168,67,.4)}
+.btn-gold:active{transform:scale(.98)}
+.btn-google{
+  background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);
+  color:var(--white);width:100%;padding:12px;border-radius:11px;border:none;cursor:pointer;
+  font-family:'Sora',sans-serif;font-size:13px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;gap:10px;transition:all .15s;margin-top:10px;
+  backdrop-filter:blur(10px);
+}
+.btn-google:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2)}
+.btn-link{background:none;border:none;color:var(--gold);font-size:12px;cursor:pointer;font-family:'Sora',sans-serif;font-weight:600;padding:8px 0;width:100%;text-align:center;margin-top:4px}
+
+/* DIVIDER */
+.divider{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--muted);font-size:11px;letter-spacing:.5px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.07)}
+
+/* MSG */
+.msg{padding:10px 13px;border-radius:8px;font-size:12px;font-weight:600;margin-bottom:12px;display:none;line-height:1.5;border:1px solid transparent}
+.msg.err{background:rgba(239,68,68,.08);color:#ff8090;border-color:rgba(239,68,68,.2);display:block}
+.msg.ok{background:rgba(34,197,94,.08);color:var(--green);border-color:rgba(34,197,94,.2);display:block}
+
+/* LOADING */
+.btn.loading .btn-txt{opacity:0}
+.btn.loading::after{content:'';position:absolute;width:18px;height:18px;border:2px solid rgba(0,0,0,.2);border-top-color:#000;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* OTP */
+.otp-label{font-size:11px;color:var(--muted2);text-align:center;margin-bottom:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+.otp-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:14px}
+.otp-inp{background:rgba(0,0,0,.3);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;padding:12px 4px;text-align:center;color:var(--white);font-size:20px;font-weight:700;transition:border-color .2s;width:100%}
+.otp-inp:focus{outline:none;border-color:rgba(212,168,67,.5)}
+
+/* FOOTER */
+.auth-footer{text-align:center;margin-top:16px;font-size:11px;color:var(--muted);padding-bottom:20px;width:100%;max-width:360px}
+.auth-footer a{color:rgba(212,168,67,.6);text-decoration:none}
+
+/* RECAPTCHA escondido */
+#recaptcha-container,#recaptcha-reg-container{opacity:0;height:0;overflow:hidden;pointer-events:none}
+
+/* SECTION HIDDEN */
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<div class="hero-bg"></div>
+<div class="hero-noise"></div>
+
+<div class="wrap">
+
+  <!-- LOGO -->
+  <div class="logo-block">
+    <div class="logo-circle">
+      <div class="logo-scissors">✂</div>
+    </div>
+    <div class="logo-name">Barber<span>OS</span></div>
+    <div class="logo-since">· Since 2025 ·</div>
+    <div class="logo-tagline">Gestiona tu barbería con elegancia</div>
+  </div>
+
+  <!-- CARD -->
+  <div class="auth-card">
+    <div class="card-title">Accede a tu cuenta</div>
+    <div class="card-divider"></div>
+
+    <div class="msg" id="msg"></div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('login')">Iniciar Sesión</button>
+      <button class="tab" onclick="switchTab('registro')">Registrarse</button>
+    </div>
+
+    <!-- ══ LOGIN ══ -->
+    <div id="sec-login">
+      <div class="method-tabs">
+        <button class="mtab active" onclick="switchMethod('email','login')">✉ Correo</button>
+        <button class="mtab" onclick="switchMethod('phone','login')">📱 Teléfono</button>
+      </div>
+
+      <!-- Email -->
+      <div id="login-email">
+        <div class="fg">
+          <div class="fi-wrap">
+            <span class="fi-icon">✉</span>
+            <input type="email" class="fi" id="l-email" placeholder="Correo electrónico" onkeydown="if(event.key==='Enter')loginEmail()">
+          </div>
+        </div>
+        <div class="fg">
+          <div class="fi-wrap">
+            <span class="fi-icon">🔒</span>
+            <input type="password" class="fi" id="l-pass" placeholder="Contraseña" onkeydown="if(event.key==='Enter')loginEmail()">
+            <button class="fi-eye" onclick="togglePass('l-pass',this)" type="button">👁</button>
+          </div>
+        </div>
+        <a class="forgot" onclick="forgotPass()">¿Olvidaste tu contraseña?</a>
+        <button class="btn btn-gold" onclick="loginEmail()" id="btn-le">
+          <span class="btn-txt">Entrar al Panel →</span>
+        </button>
+      </div>
+
+      <!-- Teléfono -->
+      <div id="login-phone" class="hidden">
+        <div class="fg">
+          <div class="phone-row">
+            <select class="country-sel" id="l-code">
+              <option value="+57">🇨🇴 +57</option>
+              <option value="+1">🇺🇸 +1</option>
+              <option value="+34">🇪🇸 +34</option>
+              <option value="+52">🇲🇽 +52</option>
+              <option value="+58">🇻🇪 +58</option>
+              <option value="+51">🇵🇪 +51</option>
+            </select>
+            <div class="fi-wrap" style="flex:1">
+              <span class="fi-icon">📱</span>
+              <input type="tel" class="fi" id="l-phone" placeholder="Número celular">
+            </div>
+          </div>
+        </div>
+        <div id="recaptcha-container"></div>
+        <button class="btn btn-gold" onclick="loginPhone()" id="btn-lp">
+          <span class="btn-txt">Enviar código SMS →</span>
+        </button>
+        <div id="otp-login" class="hidden" style="margin-top:14px">
+          <div class="otp-label">Ingresa el código de 6 dígitos</div>
+          <div class="otp-grid" id="otp-l-grid"></div>
+          <button class="btn btn-gold" onclick="verificarOTPLogin()"><span class="btn-txt">Verificar y Entrar →</span></button>
+          <button class="btn-link" onclick="document.getElementById('otp-login').classList.add('hidden')">← Cambiar número</button>
+        </div>
+      </div>
+
+      <div class="divider">o continúa con</div>
+      <button class="btn-google" onclick="loginGoogle()">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continuar con Google
+      </button>
+    </div>
+
+    <!-- ══ REGISTRO ══ -->
+    <div id="sec-registro" class="hidden">
+      <div class="trial-badge">
+        <div style="font-size:20px;flex-shrink:0">🎁</div>
+        <div class="trial-txt">
+          <b>7 días completamente gratis</b><br>
+          <span>Sin tarjeta de crédito · Acceso completo · Cancela cuando quieras</span>
+        </div>
+      </div>
+
+      <div class="method-tabs">
+        <button class="mtab active" onclick="switchMethod('email','registro')">✉ Correo</button>
+        <button class="mtab" onclick="switchMethod('phone','registro')">📱 Teléfono</button>
+      </div>
+
+      <!-- Email registro -->
+      <div id="reg-email">
+        <div class="fg">
+          <div class="fi-wrap">
+            <span class="fi-icon">✂</span>
+            <input type="text" class="fi" id="r-barberia" placeholder="Nombre de tu barbería">
+          </div>
+        </div>
+        <div class="fg">
+          <div class="fi-wrap">
+            <span class="fi-icon">👤</span>
+            <input type="text" class="fi" id="r-nombre" placeholder="Tu nombre completo">
+          </div>
+        </div>
+        <div class="fg">
+          <div class="fi-wrap">
+            <span class="fi-icon">✉</span>
+            <input type="email" class="fi" id="r-email" placeholder="Correo electrónico">
+          </div>
+        </div>
+        <div class="fg">
+          <div class="fi-wrap">
+            <span class="fi-icon">🔒</span>
+            <input type="password" class="fi" id="r-pass" placeholder="Contraseña (mín. 6 caracteres)">
+            <button class="fi-eye" onclick="togglePass('r-pass',this)" type="button">👁</button>
+          </div>
+        </div>
+        <button class="btn btn-gold" onclick="registrarEmail()" id="btn-re">
+          <span class="btn-txt">Comenzar prueba gratis →</span>
+        </button>
+      </div>
+
+      <!-- Teléfono registro -->
+      <div id="reg-phone" class="hidden">
+        <div class="fg">
+          <div class="fi-wrap">
+            <span class="fi-icon">✂</span>
+            <input type="text" class="fi" id="rp-barberia" placeholder="Nombre de tu barbería">
+          </div>
+        </div>
+        <div class="fg">
+          <div class="fi-wrap">
+            <span class="fi-icon">👤</span>
+            <input type="text" class="fi" id="rp-nombre" placeholder="Tu nombre completo">
+          </div>
+        </div>
+        <div class="fg">
+          <div class="phone-row">
+            <select class="country-sel" id="rp-code">
+              <option value="+57">🇨🇴 +57</option>
+              <option value="+1">🇺🇸 +1</option>
+              <option value="+34">🇪🇸 +34</option>
+              <option value="+52">🇲🇽 +52</option>
+              <option value="+58">🇻🇪 +58</option>
+              <option value="+51">🇵🇪 +51</option>
+            </select>
+            <div class="fi-wrap" style="flex:1">
+              <span class="fi-icon">📱</span>
+              <input type="tel" class="fi" id="rp-phone" placeholder="Número celular">
+            </div>
+          </div>
+        </div>
+        <div id="recaptcha-reg-container"></div>
+        <button class="btn btn-gold" onclick="registrarPhone()" id="btn-rp">
+          <span class="btn-txt">Enviar código SMS →</span>
+        </button>
+        <div id="otp-reg" class="hidden" style="margin-top:14px">
+          <div class="otp-label">Código enviado — ingresa los 6 dígitos</div>
+          <div class="otp-grid" id="otp-r-grid"></div>
+          <button class="btn btn-gold" onclick="verificarOTPReg()"><span class="btn-txt">Crear cuenta →</span></button>
+          <button class="btn-link" onclick="document.getElementById('otp-reg').classList.add('hidden')">← Cambiar número</button>
+        </div>
+      </div>
+
+      <div class="auth-footer" style="margin-top:12px;padding-bottom:0">
+        Al registrarte aceptas los <a href="#">términos de uso</a> y la <a href="#">política de privacidad</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-footer">
+    BarberOS · Gestión Premium para Barberías 🇨🇴
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged,
+  signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  signInWithPopup, GoogleAuthProvider, sendPasswordResetEmail,
+  RecaptchaVerifier, signInWithPhoneNumber
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getFirestore, doc, setDoc, getDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const FB = {
+  apiKey:"AIzaSyCaKIEWgvtTMLkIPnIeHj3PrVQ9iodV5dI",
+  authDomain:"barberos-pro.firebaseapp.com",
+  projectId:"barberos-pro",
+  storageBucket:"barberos-pro.firebasestorage.app",
+  messagingSenderId:"772002513976",
+  appId:"1:772002513976:web:6cacb96069236dd8c6d2cd"
+};
+
+const app = initializeApp(FB);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const gProvider = new GoogleAuthProvider();
+gProvider.setCustomParameters({prompt:'select_account'});
+
+const $ = id => document.getElementById(id);
+let confirmResult = null, rcpLogin = null, rcpReg = null;
+let pendingPhone = {};
+
+// Si ya logueado → redirigir
+onAuthStateChanged(auth, user => {
+  if (user) irA('barbero-app-firebase.html');
+});
+
+// ── TABS ──
+window.switchTab = function(tab) {
+  $('sec-login').classList.toggle('hidden', tab !== 'login');
+  $('sec-registro').classList.toggle('hidden', tab !== 'registro');
+  document.querySelectorAll('.tabs .tab').forEach((t,i) =>
+    t.classList.toggle('active', (tab==='login'&&i===0)||(tab==='registro'&&i===1))
+  );
+  showMsg('');
+};
+
+// ── MÉTODO ──
+window.switchMethod = function(method, section) {
+  const isLogin = section === 'login';
+  const eDiv = isLogin ? 'login-email' : 'reg-email';
+  const pDiv = isLogin ? 'login-phone' : 'reg-phone';
+  $(eDiv).classList.toggle('hidden', method !== 'email');
+  $(pDiv).classList.toggle('hidden', method !== 'phone');
+  const parent = isLogin ? $('sec-login') : $('sec-registro');
+  parent.querySelectorAll('.mtab').forEach((b,i) =>
+    b.classList.toggle('active', (method==='email'&&i===0)||(method==='phone'&&i===1))
+  );
+  showMsg('');
+  if (method === 'phone') setTimeout(() => initRcp(isLogin), 200);
+};
+
+// ── RECAPTCHA (invisible) ──
+function initRcp(isLogin) {
+  const cId = isLogin ? 'recaptcha-container' : 'recaptcha-reg-container';
+  if ($(cId).childElementCount > 0) return;
+  try {
+    const v = new RecaptchaVerifier(auth, cId, {
+      size: 'invisible',
+      callback: () => {},
+      'expired-callback': () => showMsg('Verificación expirada, intenta de nuevo','err')
+    });
+    v.render();
+    if (isLogin) rcpLogin = v; else rcpReg = v;
+  } catch(e) { console.warn('rcp:', e); }
+}
+
+// ── OTP ──
+function buildOTP(gridId) {
+  const g = $(gridId);
+  g.innerHTML = Array.from({length:6},(_,i) =>
+    `<input class="otp-inp" id="${gridId}${i}" maxlength="1" type="tel"
+      oninput="otpNext(this,${i},'${gridId}')"
+      onkeydown="otpBack(event,${i},'${gridId}')">`
+  ).join('');
+  setTimeout(() => $(`${gridId}0`)?.focus(), 100);
+}
+window.otpNext = (el,i,g) => { el.value=el.value.replace(/\D/g,''); if(el.value&&i<5) $(`${g}${i+1}`)?.focus(); };
+window.otpBack = (e,i,g) => { if(e.key==='Backspace'&&!e.target.value&&i>0) $(`${g}${i-1}`)?.focus(); };
+const getOTP = g => Array.from({length:6},(_,i)=>($(`${g}${i}`)?.value||'')).join('');
+
+// ── TOGGLE PASS ──
+window.togglePass = (id, btn) => {
+  const inp = $(id);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+};
+
+// ── LOGIN EMAIL ──
+window.loginEmail = async () => {
+  const email=$('l-email').value.trim(), pass=$('l-pass').value;
+  if(!email||!pass){showMsg('Completa todos los campos','err');return;}
+  setLoad('btn-le',true);
+  try { await signInWithEmailAndPassword(auth,email,pass); }
+  catch(e){showMsg(tradErr(e.code),'err');setLoad('btn-le',false);}
+};
+
+// ── LOGIN GOOGLE ──
+window.loginGoogle = async () => {
+  showMsg('');
+  try {
+    const cred = await signInWithPopup(auth, gProvider);
+    const snap = await getDoc(doc(db,'barberias',cred.user.uid));
+    if (!snap.exists()) await crearBarberia(cred.user.uid,{
+      nombre:cred.user.displayName||'Mi Barbería',
+      email:cred.user.email, wa:'', dueno:cred.user.displayName||''
+    });
+  } catch(e) {
+    if (!['auth/popup-closed-by-user','auth/cancelled-popup-request'].includes(e.code))
+      showMsg(tradErr(e.code),'err');
+  }
+};
+
+// ── LOGIN TELÉFONO ──
+window.loginPhone = async () => {
+  const code = $('l-code').value;
+  const phone = $('l-phone').value.trim().replace(/\D/g,'');
+  if (!phone) {showMsg('Ingresa tu número','err');return;}
+  if (!rcpLogin) { initRcp(true); await new Promise(r=>setTimeout(r,500)); }
+  setLoad('btn-lp',true);
+  try {
+    confirmResult = await signInWithPhoneNumber(auth, code+phone, rcpLogin);
+    $('otp-login').classList.remove('hidden');
+    buildOTP('otp-l-grid');
+    showMsg('✓ Código enviado','ok');
+  } catch(e){showMsg(tradErr(e.code),'err');}
+  setLoad('btn-lp',false);
+};
+window.verificarOTPLogin = async () => {
+  const code = getOTP('otp-l-grid');
+  if(code.length<6){showMsg('Ingresa los 6 dígitos','err');return;}
+  try {
+    const cred = await confirmResult.confirm(code);
+    const snap = await getDoc(doc(db,'barberias',cred.user.uid));
+    if(!snap.exists()) await crearBarberia(cred.user.uid,{nombre:'Mi Barbería',email:'',wa:cred.user.phoneNumber||'',dueno:''});
+  } catch(e){showMsg('Código incorrecto o expirado','err');}
+};
+
+// ── REGISTRO EMAIL ──
+window.registrarEmail = async () => {
+  const barberia=$('r-barberia').value.trim(), nombre=$('r-nombre').value.trim();
+  const email=$('r-email').value.trim(), pass=$('r-pass').value;
+  if(!barberia||!nombre||!email||!pass){showMsg('Completa todos los campos','err');return;}
+  if(pass.length<6){showMsg('Contraseña mínimo 6 caracteres','err');return;}
+  setLoad('btn-re',true);
+  try {
+    const cred = await createUserWithEmailAndPassword(auth,email,pass);
+    await crearBarberia(cred.user.uid,{nombre:barberia,email,wa:'',dueno:nombre});
+    showMsg('¡Cuenta creada! Ingresando...','ok');
+  } catch(e){showMsg(tradErr(e.code),'err');setLoad('btn-re',false);}
+};
+
+// ── REGISTRO TELÉFONO ──
+window.registrarPhone = async () => {
+  const barberia=$('rp-barberia').value.trim(), nombre=$('rp-nombre').value.trim();
+  const code=$('rp-code').value, phone=$('rp-phone').value.trim().replace(/\D/g,'');
+  if(!barberia||!nombre||!phone){showMsg('Completa todos los campos','err');return;}
+  pendingPhone={barberia,nombre,wa:code+phone};
+  if(!rcpReg){initRcp(false);await new Promise(r=>setTimeout(r,500));}
+  setLoad('btn-rp',true);
+  try {
+    confirmResult = await signInWithPhoneNumber(auth, code+phone, rcpReg);
+    $('otp-reg').classList.remove('hidden');
+    buildOTP('otp-r-grid');
+    showMsg('✓ Código enviado','ok');
+  } catch(e){showMsg(tradErr(e.code),'err');}
+  setLoad('btn-rp',false);
+};
+window.verificarOTPReg = async () => {
+  const code = getOTP('otp-r-grid');
+  if(code.length<6){showMsg('Ingresa los 6 dígitos','err');return;}
+  try {
+    const cred = await confirmResult.confirm(code);
+    await crearBarberia(cred.user.uid,{nombre:pendingPhone.barberia,email:'',wa:pendingPhone.wa,dueno:pendingPhone.nombre});
+  } catch(e){showMsg('Código incorrecto o expirado','err');}
+};
+
+// ── CREAR BARBERÍA ──
+async function crearBarberia(uid, data) {
+  const trial = new Date(); trial.setDate(trial.getDate()+7);
+  await setDoc(doc(db,'barberias',uid),{
+    nombre:data.nombre, dueno:data.dueno||'', email:data.email||'',
+    wa:data.wa||'', plan:'trial',
+    trialInicio:new Date().toISOString(), trialFin:trial.toISOString(),
+    creadoEn:serverTimestamp(), activo:true
+  });
+  await setDoc(doc(db,'barberias',uid,'config','barberia'),{
+    nombre:data.nombre, wa:data.wa||'', open:'08:00', close:'19:30'
+  });
+  const srvs=[
+    {id:"s1",nombre:"Corte clásico",precio:20000,orden:0},
+    {id:"s2",nombre:"Corte + barba",precio:35000,orden:1},
+    {id:"s3",nombre:"Arreglo barba",precio:18000,orden:2},
+    {id:"s4",nombre:"Degradado",precio:25000,orden:3},
+    {id:"s5",nombre:"Corte infantil",precio:15000,orden:4},
+    {id:"s6",nombre:"Diseño/líneas",precio:12000,orden:5},
+    {id:"s7",nombre:"Keratina",precio:50000,orden:6},
+    {id:"s8",nombre:"Color",precio:45000,orden:7},
+  ];
+  await Promise.all(srvs.map(s=>setDoc(doc(db,'barberias',uid,'servicios',s.id),{nombre:s.nombre,precio:s.precio,orden:s.orden})));
+}
+
+// ── FORGOT ──
+window.forgotPass = async () => {
+  const email=$('l-email').value.trim();
+  if(!email){showMsg('Escribe tu correo primero','err');return;}
+  try {
+    await sendPasswordResetEmail(auth,email);
+    showMsg('✓ Correo de recuperación enviado. Revisa tu bandeja','ok');
+  } catch(e){showMsg(tradErr(e.code),'err');}
+};
+
+// ── HELPERS ──
+function setLoad(id,on){const b=$(id);if(b)b.classList.toggle('loading',on);}
+function showMsg(txt,type=''){
+  const el=$('msg');el.textContent=txt;
+  el.className='msg'+(type?' '+type:'');
+  if(!type)el.style.display='none';
+}
+function irA(archivo){
+  const base=location.href.replace(/[^/]*$/,'');
+  window.location.href=base+archivo;
+}
+function tradErr(code){
+  const m={
+    'auth/user-not-found':'No existe cuenta con ese correo',
+    'auth/wrong-password':'Contraseña incorrecta',
+    'auth/invalid-credential':'Correo o contraseña incorrectos',
+    'auth/email-already-in-use':'Este correo ya está registrado',
+    'auth/weak-password':'Contraseña muy débil (mínimo 6 caracteres)',
+    'auth/invalid-email':'Formato de correo inválido',
+    'auth/too-many-requests':'Demasiados intentos. Espera unos minutos',
+    'auth/network-request-failed':'Sin conexión a internet',
+    'auth/invalid-phone-number':'Número inválido. Incluye código de país (+57...)',
+    'auth/quota-exceeded':'Límite de SMS alcanzado. Usa registro con correo',
+    'auth/captcha-check-failed':'Error de verificación. Recarga la página',
+    'auth/invalid-verification-code':'Código incorrecto',
+    'auth/code-expired':'Código expirado. Solicita uno nuevo',
+    'auth/popup-blocked':'Popup bloqueado. Permite popups en Chrome',
+    'auth/operation-not-allowed':'Método no habilitado. Actívalo en Firebase Console',
+  };
+  return m[code]||'Error: '+code;
+}
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>

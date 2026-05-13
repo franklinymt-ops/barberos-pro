@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="manifest-cliente.json">
+<meta name="theme-color" content="#d4a843">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Reservas">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BarberOS — Reserva</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d0e10;--surface:#13151a;--card:#1a1d24;--border:#252830;--border2:#2e3240;
+  --gold:#d4a843;--gold2:#f0c060;--gold-glow:rgba(212,168,67,.12);
+  --white:#f0ede8;--muted:#5a5f6e;--muted2:#7a8090;
+  --green:#22c55e;--red:#ef4444;--radius:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--white);font-family:'Sora',sans-serif;display:flex;flex-direction:column}
+
+/* HERO */
+.hero{position:relative;flex-shrink:0;height:200px;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:linear-gradient(160deg,#1a1500,#0d0e10);background-size:cover;background-position:center}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(13,14,16,0) 20%,rgba(13,14,16,.98) 100%)}
+.hero-content{position:absolute;bottom:0;left:0;right:0;padding:14px 18px 18px;display:flex;align-items:flex-end;gap:12px}
+.hero-logo{width:58px;height:58px;border-radius:12px;background:var(--card);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;overflow:hidden;box-shadow:0 4px 20px rgba(212,168,67,.3)}
+.hero-logo img{width:100%;height:100%;object-fit:cover}
+.hero-name{font-family:'Playfair Display',serif;font-size:18px;font-weight:900;line-height:1.1}
+.hero-sub{font-size:11px;color:var(--muted2);margin-top:2px}
+.hero-badge{background:var(--gold);color:#000;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:1px;display:inline-block;margin-top:4px}
+
+/* NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(19,21,26,.96);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:100}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;gap:4px;background:none;border:none;color:var(--muted);cursor:pointer;font-family:'Sora',sans-serif;font-size:9px;font-weight:600;letter-spacing:.5px;transition:color .2s}
+.nav-btn.active{color:var(--gold)}
+.nav-btn svg{width:20px;height:20px}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;padding:14px 16px 90px;scrollbar-width:none}
+.main::-webkit-scrollbar{display:none}
+.page{display:none}
+.page.active{display:block}
+
+/* STEPS */
+.steps{display:flex;align-items:center;margin-bottom:18px}
+.step-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative}
+.step-item::after{content:'';position:absolute;top:13px;left:50%;width:100%;height:1.5px;background:var(--border2);z-index:0}
+.step-item:last-child::after{display:none}
+.step-num{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border2);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);position:relative;z-index:1;transition:all .3s}
+.step-item.active .step-num{border-color:var(--gold);color:var(--gold);background:var(--gold-glow)}
+.step-item.done .step-num{background:var(--gold);border-color:var(--gold);color:#000}
+.step-lbl{font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
+.step-item.active .step-lbl,.step-item.done .step-lbl{color:var(--gold)}
+
+/* WIZARD */
+.ws{display:none}
+.ws.active{display:block;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.ws-title{font-size:15px;font-weight:700;margin-bottom:12px}
+
+/* BARBERO CARDS */
+.b-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s}
+.b-card:active{transform:scale(.98)}
+.b-card.sel{border-color:var(--gold);background:#1a1800}
+.b-ava{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#8b6314);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:19px;font-weight:900;color:#000;flex-shrink:0;overflow:hidden}
+.b-ava img{width:100%;height:100%;object-fit:cover}
+.b-name{font-size:14px;font-weight:700}
+.b-meta{font-size:11px;color:var(--muted2);margin-top:2px}
+.b-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.b-chip{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2px 8px;font-size:10px;color:var(--muted2)}
+.b-chk{margin-left:auto;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.b-card.sel .b-chk{background:var(--gold);border-color:var(--gold);color:#000;font-size:12px}
+
+/* SERVICIOS */
+.srv-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.srv-card{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px 10px;cursor:pointer;transition:all .2s;text-align:center}
+.srv-card.sel{border-color:var(--gold);background:#1a1800}
+.srv-icon{font-size:26px;margin-bottom:6px}
+.srv-name{font-size:12px;font-weight:700;line-height:1.2}
+.srv-price{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--gold);margin-top:4px;font-weight:600}
+
+/* CALENDARIO */
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-mes{font-family:'Playfair Display',serif;font-size:17px;font-weight:900;color:var(--gold)}
+.cal-nav-btn{background:var(--card);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--white);font-size:16px;transition:background .15s}
+.cal-nav-btn:active{background:var(--border2)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:12px}
+.cal-lbl{text-align:center;font-size:10px;font-weight:700;color:var(--muted);padding:4px 0;letter-spacing:.5px}
+.cal-dia{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;position:relative}
+.cal-dia.vacio{cursor:default}
+.cal-dia.past{color:var(--muted);opacity:.35;cursor:not-allowed}
+.cal-dia.hoy{color:var(--gold);font-weight:700}
+.cal-dia.sel{background:var(--gold);color:#000;font-weight:800}
+.cal-dia.dot::before{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--gold)}
+.cal-dia.sel.dot::before{background:#000}
+.cal-dia:not(.past):not(.vacio):not(.sel):hover{background:var(--card)}
+
+/* FILTROS */
+.time-filters{display:flex;gap:6px;margin-bottom:10px}
+.tf{flex:1;padding:8px;border-radius:8px;background:var(--card);border:1.5px solid var(--border);color:var(--muted);font-family:'Sora',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.tf.active{background:var(--gold-glow);border-color:var(--gold);color:var(--gold)}
+
+/* SLOTS */
+.slots-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.slot{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:10px 4px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;color:var(--muted2)}
+.slot.libre{border-color:rgba(34,197,94,.3);color:var(--green);background:rgba(34,197,94,.05)}
+.slot.ocu{opacity:.3;cursor:not-allowed}
+.slot.sel{background:var(--gold);border-color:var(--gold);color:#000}
+.slot:not(.ocu):not(.sel):hover{border-color:var(--gold)}
+.no-slots{text-align:center;color:var(--muted);font-size:13px;padding:20px 0}
+
+/* RESUMEN */
+.res-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px}
+.res-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+.res-row:last-child{border-bottom:none}
+.res-lbl{font-size:11px;color:var(--muted2);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.res-val{font-size:13px;font-weight:700}
+.res-val.gold{color:var(--gold)}
+
+/* FORMS */
+.fg{margin-bottom:12px}
+.fl{display:block;font-size:11px;font-weight:700;color:var(--muted2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.fi{width:100%;background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;color:var(--white);font-family:'Sora',sans-serif;font-size:14px;transition:border-color .2s}
+.fi:focus{outline:none;border-color:var(--gold)}
+.fi::placeholder{color:var(--muted)}
+
+/* BUTTONS */
+.btn{width:100%;padding:13px;border-radius:11px;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-size:14px;font-weight:700;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#a07820);color:#000;box-shadow:0 4px 20px rgba(212,168,67,.22)}
+.btn-gold:active{transform:scale(.98)}
+.btn-out{background:transparent;border:1.5px solid var(--border2);color:var(--muted2)}
+.btn-wa{background:#25d366;color:#000}
+.btn-row{display:flex;gap:8px;margin-top:12px}
+.btn-row .btn-out{flex:.4}
+.btn-row .btn-gold{flex:1}
+
+/* SUCCESS */
+.success{display:none;text-align:center;padding:24px 0}
+.success.show{display:block;animation:fadeIn .4s ease}
+.s-icon{font-size:54px;margin-bottom:14px;animation:pop .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+.s-title{font-family:'Playfair Display',serif;font-size:23px;font-weight:900;margin-bottom:8px}
+.s-detail{font-size:13px;color:var(--muted2);line-height:1.6;margin-bottom:22px}
+
+/* HISTORIAL */
+.tc{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:14px;margin-bottom:10px;border-left:3px solid var(--border)}
+.tc.espera{border-left-color:#f59e0b}
+.tc.atencion{border-left-color:var(--gold)}
+.tc.listo{border-left-color:var(--green)}
+.tc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.tc-hora{font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:600;color:var(--gold)}
+.tc-badge{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700}
+.be{background:rgba(245,158,11,.1);color:#f59e0b}
+.ba{background:var(--gold-glow);color:var(--gold)}
+.bl{background:rgba(34,197,94,.1);color:var(--green)}
+
+/* PRECIOS */
+.pr{display:flex;align-items:center;padding:11px 0;border-bottom:1px solid var(--border)}
+.pr:last-child{border-bottom:none}
+.pr-icon{font-size:22px;margin-right:10px}
+.pr-nombre{font-size:13px;font-weight:600;flex:1}
+.pr-val{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;color:var(--gold)}
+
+/* CONEXION */
+.conx{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:55vh;text-align:center;padding:20px}
+
+/* TOAST */
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-60px);background:var(--card);border:1px solid var(--border);color:var(--white);padding:10px 20px;border-radius:24px;font-size:13px;font-weight:600;z-index:999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.err{border-color:var(--red);color:var(--red)}
+
+/* LIVE */
+.live{display:inline-flex;align-items:center;gap:5px;font-size:10px;color:var(--green);font-weight:600;margin-bottom:10px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* SEC */
+.sec-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;margin-bottom:4px}
+.sec-sub{font-size:11px;color:var(--muted2);margin-bottom:14px}
+
+/* LOADER */
+.loader{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:999;transition:opacity .4s}
+.loader.hide{opacity:0;pointer-events:none}
+.loader-name{font-family:'Playfair Display',serif;font-size:26px;font-weight:900}
+.loader-name span{color:var(--gold)}
+.loader-spin{width:34px;height:34px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="loader" id="loader">
+  <div class="loader-name">Barber<span>OS</span></div>
+  <div class="loader-spin"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-bg" id="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-logo" id="hero-logo">✂</div>
+    <div>
+      <div class="hero-name" id="hero-nombre">Cargando...</div>
+      <div class="hero-sub" id="hero-sub">Tu barbería de confianza</div>
+      <span class="hero-badge">RESERVAS ABIERTAS</span>
+    </div>
+  </div>
+</div>
+
+<main class="main">
+
+  <!-- AGENDAR -->
+  <section class="page active" id="page-agendar">
+    <div class="steps" id="steps-ui">
+      <div class="step-item active" id="si1"><div class="step-num">1</div><div class="step-lbl">Barbero</div></div>
+      <div class="step-item" id="si2"><div class="step-num">2</div><div class="step-lbl">Servicio</div></div>
+      <div class="step-item" id="si3"><div class="step-num">3</div><div class="step-lbl">Fecha</div></div>
+      <div class="step-item" id="si4"><div class="step-num">4</div><div class="step-lbl">Confirmar</div></div>
+    </div>
+    <div id="wiz">
+      <!-- WS1 -->
+      <div class="ws active" id="ws1">
+        <div class="ws-title">¿Con quién quieres tu corte?</div>
+        <div class="live"><div class="live-dot"></div>Disponibilidad en tiempo real</div>
+        <div id="b-list"><div style="text-align:center;color:var(--muted);padding:24px;font-size:13px">Cargando barberos...</div></div>
+        <div style="margin-top:12px"><button class="btn btn-gold" onclick="wNext(1)">Siguiente →</button></div>
+      </div>
+      <!-- WS2 -->
+      <div class="ws" id="ws2">
+        <div class="ws-title">¿Qué servicio necesitas?</div>
+        <div class="srv-grid" id="srv-grid"></div>
+        <div class="btn-row">
+          <button class="btn btn-out" onclick="wBack(2)">←</button>
+          <button class="btn btn-gold" onclick="wNext(2)">Siguiente →</button>
+        </div>
+      </div>
+      <!-- WS3 -->
+      <div class="ws" id="ws3">
+        <div class="ws-title">Elige fecha y hora</div>
+        <div class="live"><div class="live-dot"></div>Actualizado en vivo</div>
+        <div class="cal-head">
+          <button class="cal-nav-btn" onclick="camMes(-1)">‹</button>
+          <div class="cal-mes" id="cal-mes"></div>
+          <button class="cal-nav-btn" onclick="camMes(1)">›</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div id="hora-sec" style="display:none">
+          <div style="font-size:12px;color:var(--muted2);margin-bottom:8px" id="fecha-lbl"></div>
+          <div class="time-filters">
+            <button class="tf active" onclick="filtHora('todos',this)">Todos</button>
+            <button class="tf" onclick="filtHora('mañana',this)">Mañana</button>
+            <button class="tf" onclick="filtHora('tarde',this)">Tarde</button>
+            <button class="tf" onclick="filtHora('noche',this)">Noche</button>
+          </div>
+          <div class="slots-grid" id="hora-slots"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-out" onclick="wBack(3)">←</button>
+          <button class="btn btn-gold" onclick="wNext(3)">Siguiente →</button>
+        </div>
+      </div>
+      <!-- WS4 -->
+      <div class="ws" id="ws4">
+        <div class="ws-title">Confirma tu turno</div>
+        <div class="res-card" id="res-data"></div>
+        <div class="fg"><label class="fl">Tu nombre completo</label><input type="text" class="fi" id="cli-nom" placeholder="Ej: Carlos Torres"></div>
+        <div class="fg"><label class="fl">WhatsApp</label><input type="tel" class="fi" id="cli-tel" placeholder="3001234567"></div>
+        <div class="btn-row">
+          <button class="btn btn-out" onclick="wBack(4)">←</button>
+          <button class="btn btn-gold" onclick="confirmar()">✓ Confirmar Turno</button>
+        </div>
+      </div>
+    </div>
+    <!-- SUCCESS -->
+    <div class="success" id="suc">
+      <div class="s-icon">✂️</div>
+      <div class="s-title">¡Turno Agendado!</div>
+      <div class="s-detail" id="suc-detail"></div>
+      <button class="btn btn-wa" id="btn-wa" style="margin-bottom:10px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+        Confirmar por WhatsApp
+      </button>
+      <button class="btn btn-out" onclick="resetWiz()">Agendar otro turno</button>
+    </div>
+  </section>
+
+  <!-- HISTORIAL -->
+  <section class="page" id="page-historial">
+    <div class="sec-title">Mis Turnos</div>
+    <div class="sec-sub">Próximos y recientes</div>
+    <div id="lista-tc"></div>
+  </section>
+
+  <!-- PRECIOS -->
+  <section class="page" id="page-precios">
+    <div class="sec-title">Servicios</div>
+    <div class="sec-sub">Lista de precios</div>
+    <div class="res-card"><div id="lista-pr"></div></div>
+  </section>
+
+</main>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="navC('agendar',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>AGENDAR
+  </button>
+  <button class="nav-btn" onclick="navC('historial',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>MIS TURNOS
+  </button>
+  <button class="nav-btn" onclick="navC('precios',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>PRECIOS
+  </button>
+</nav>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore,collection,doc,addDoc,onSnapshot,query,where,serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInWithPhoneNumber, RecaptchaVerifier, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const FB={apiKey:"AIzaSyCaKIEWgvtTMLkIPnIeHj3PrVQ9iodV5dI",authDomain:"barberos-pro.firebaseapp.com",projectId:"barberos-pro",storageBucket:"barberos-pro.firebasestorage.app",messagingSenderId:"772002513976",appId:"1:772002513976:web:6cacb96069236dd8c6d2cd"};
+const ICONOS={s1:"💈",s2:"✂️",s3:"🪒",s4:"💇",s5:"👦",s6:"🖊️",s7:"💆",s8:"🎨"};
+const HORAS=["08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30"];
+const MESES=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const DIAS_S=["Do","Lu","Ma","Mi","Ju","Vi","Sá"];
+const DIAS_L=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+const MESES_C=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+
+let db,BID=null;
+let barberos=[],servicios=[],turnos=[],cfg={};
+let wB=null,wS=null,wF=null,wH=null;
+let calY=new Date().getFullYear(),calM=new Date().getMonth();
+let filtro='todos';
+const $=id=>document.getElementById(id);
+const fCOP=n=>n>=1000000?'$'+(n/1000000).toFixed(1)+'M':n>=1000?'$'+Math.round(n/1000)+'K':'$'+n;
+const hoy=()=>{
+  const d=new Date();
+  const local=new Date(d.getTime()-d.getTimezoneOffset()*60000);
+  return local.toISOString().split('T')[0];
+};
+const toMin=t=>{const[h,m]=t.split(':').map(Number);return h*60+m;};
+
+// BID
+function getBID(){const p=new URLSearchParams(location.search);const b=p.get('bid')||localStorage.getItem('bos_bid');if(b)localStorage.setItem('bos_bid',b);return b;}
+
+try{
+  const app=initializeApp(FB);
+  db=getFirestore(app);
+  BID=getBID();
+  if(!BID){mostrarConx();$('loader').classList.add('hide');}
+  else iniciar();
+}catch(e){$('loader').classList.add('hide');toast('Error conexión','err');}
+
+function iniciar(){
+  // Config
+  onSnapshot(doc(db,'barberias',BID,'config','barberia'),snap=>{
+    if(snap.exists()){
+      cfg=snap.data();
+      $('hero-nombre').textContent=cfg.nombre||'Mi Barbería';
+      $('hero-sub').textContent=`Abierto ${cfg.open||'08:00'} – ${cfg.close||'19:30'}`;
+      if(cfg.banner){$('hero-bg').style.cssText=`background-image:url('${cfg.banner}');background-size:cover;background-position:center;opacity:.5`;}
+      if(cfg.logo){$('hero-logo').innerHTML=`<img src="${cfg.logo}" alt="logo">`;}
+    }
+    $('loader').classList.add('hide');
+  });
+  // Barberos
+  onSnapshot(collection(db,'barberias',BID,'barberos'),snap=>{
+    barberos=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderBarberos();
+    if(wF)renderSlots(wF);
+  });
+  // Servicios
+  onSnapshot(collection(db,'barberias',BID,'servicios'),snap=>{
+    if(!snap.empty){servicios=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.orden||0)-(b.orden||0));renderPrecios();}
+  });
+  // Turnos próximos 7 días
+  const fechas=[0,1,2].map(d=>{const f=new Date();f.setDate(f.getDate()+d);const adj=new Date(f.getTime()-f.getTimezoneOffset()*60000);return adj.toISOString().split('T')[0];});
+  onSnapshot(query(collection(db,'barberias',BID,'turnos'),where('fecha','in',fechas.slice(0,3))),snap=>{
+    turnos=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderCal();
+    if(wF)renderSlots(wF);
+    renderHistorial();
+  });
+}
+
+// CONEXION
+function mostrarConx(){
+  $('page-agendar').innerHTML=`<div class="conx"><div style="font-size:48px;margin-bottom:14px">✂️</div><div class="sec-title">Conecta tu Barbería</div><div class="sec-sub">Ingresa el código que te dio tu barbería</div><div class="fg" style="width:100%;max-width:280px"><input type="text" class="fi" id="bid-inp" placeholder="Código de barbería" style="text-align:center;letter-spacing:2px"></div><button class="btn btn-gold" style="max-width:280px" onclick="conectar()">Conectar →</button></div>`;
+}
+window.conectar=function(){const v=$('bid-inp')?.value?.trim();if(!v)return;localStorage.setItem('bos_bid',v);location.reload();};
+
+// NAV
+window.navC=function(p,btn){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+  $('page-'+p).classList.add('active');btn.classList.add('active');
+  if(p==='historial')renderHistorial();
+};
+
+// WIZARD
+function setStep(n){for(let i=1;i<=4;i++){$('ws'+i).classList.toggle('active',i===n);const si=$('si'+i);si.className='step-item'+(i<n?' done':i===n?' active':'');}}
+window.wNext=function(f){
+  if(f===1){if(!wB){toast('Selecciona un barbero','err');return;}renderServicios();setStep(2);}
+  else if(f===2){if(!wS){toast('Selecciona un servicio','err');return;}renderCal();setStep(3);}
+  else if(f===3){if(!wF||!wH){toast('Elige fecha y hora','err');return;}renderRes();setStep(4);}
+};
+window.wBack=function(f){if(f===2)setStep(1);else if(f===3)setStep(2);else if(f===4)setStep(3);};
+
+// PASO 1
+function renderBarberos(){
+  if(!barberos.length){$('b-list').innerHTML='<div style="text-align:center;color:var(--muted);padding:24px;font-size:13px">Sin barberos disponibles</div>';return;}
+  $('b-list').innerHTML=barberos.map(b=>{
+    const libres=Math.max(0,HORAS.length-turnos.filter(t=>t.barberoId===b.id&&t.estado!=='listo').length);
+    const chips=(b.servicios||[]).slice(0,3).map(sid=>{const s=servicios.find(x=>x.id===sid);return s?`<span class="b-chip">${s.nombre}`:''}).join('');
+    const ava=b.foto?`<img src="${b.foto}" alt="${b.nombre}">`:(b.nombre||'B')[0];
+    return`<div class="b-card${wB===b.id?' sel':''}" onclick="selB('${b.id}')"><div class="b-ava">${ava}</div><div style="flex:1"><div class="b-name">${b.nombre}</div><div class="b-meta">${libres} horas disponibles hoy</div><div class="b-chips">${chips}</div></div><div class="b-chk">${wB===b.id?'✓':''}</div></div>`;
+  }).join('');
+}
+window.selB=function(id){wB=id;wS=null;wH=null;renderBarberos();};
+
+// PASO 2
+function renderServicios(){
+  const b=barberos.find(x=>x.id===wB);
+  const srvs=(b?.servicios||[]).map(sid=>servicios.find(x=>x.id===sid)).filter(Boolean);
+  $('srv-grid').innerHTML=srvs.map(s=>`<div class="srv-card${wS===s.id?' sel':''}" onclick="selS('${s.id}')"><div class="srv-icon">${ICONOS[s.id]||'✂️'}</div><div class="srv-name">${s.nombre}</div><div class="srv-price">${fCOP(s.precio)}</div></div>`).join('');
+}
+window.selS=function(id){wS=id;renderServicios();};
+
+// PASO 3: CALENDARIO
+function renderCal(){
+  $('cal-mes').textContent=`${MESES[calM]} ${calY}`;
+  const hoyD=new Date();hoyD.setHours(0,0,0,0);
+  const primo=new Date(calY,calM,1);
+  const ultimo=new Date(calY,calM+1,0).getDate();
+  let dow=primo.getDay();dow=dow===0?6:dow-1;
+  const lbls=['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
+  let html=lbls.map(d=>`<div class="cal-lbl">${d}</div>`).join('');
+  for(let i=0;i<dow;i++)html+='<div class="cal-dia vacio"></div>';
+  for(let d=1;d<=ultimo;d++){
+    const fecha=new Date(calY,calM,d);
+    const adj=new Date(fecha.getTime()-fecha.getTimezoneOffset()*60000);const fs=adj.toISOString().split('T')[0];
+    const past=fecha<hoyD;
+    const isHoy=fs===hoy();
+    const isSel=fs===wF;
+    const ocu=turnos.filter(t=>t.barberoId===wB&&t.fecha===fs&&t.estado!=='listo').length;
+    const hasDot=!past&&ocu<HORAS.length;
+    let cls='cal-dia';
+    if(past)cls+=' past';
+    else if(isSel)cls+=' sel';
+    else if(isHoy)cls+=' hoy';
+    if(hasDot)cls+=' dot';
+    const click=!past?`onclick="selF('${fs}')"` :'';
+    html+=`<div class="${cls}" ${click}>${d}</div>`;
+  }
+  $('cal-grid').innerHTML=html;
+}
+window.camMes=function(d){calM+=d;if(calM>11){calM=0;calY++;}if(calM<0){calM=11;calY--;}renderCal();};
+window.selF=function(fs){
+  wF=fs;wH=null;renderCal();
+  const d=new Date(fs);
+  $('fecha-lbl').textContent=`${DIAS_L[d.getDay()]} ${d.getDate()} de ${MESES_C[d.getMonth()]}`;
+  $('hora-sec').style.display='block';
+  filtro='todos';
+  document.querySelectorAll('.tf').forEach((b,i)=>b.classList.toggle('active',i===0));
+  renderSlots(fs);
+  setTimeout(()=>$('hora-sec').scrollIntoView({behavior:'smooth',block:'start'}),150);
+};
+
+function renderSlots(fs){
+  const open=toMin(cfg?.open||'08:00');
+  const close=toMin(cfg?.close||'19:30');
+  const now=new Date();
+  const nowMin=fs===hoy()?now.getHours()*60+now.getMinutes():-1;
+  const ocu=turnos.filter(t=>t.barberoId===wB&&t.fecha===fs&&t.estado!=='listo').map(t=>t.hora);
+  const franjas={todos:[0,1440],'mañana':[6*60,12*60],tarde:[12*60,18*60],noche:[18*60,24*60]};
+  const[fMin,fMax]=franjas[filtro]||franjas.todos;
+  const horas=HORAS.filter(h=>{const m=toMin(h);return m>=open&&m<=close&&m>=fMin&&m<fMax;});
+  if(!horas.length){$('hora-slots').innerHTML='<div class="no-slots">Sin horas disponibles en esta franja</div>';return;}
+  $('hora-slots').innerHTML=horas.map(h=>{
+    const[hh,mm]=h.split(':').map(Number);
+    const past=hh*60+mm<nowMin;
+    const isOcu=ocu.includes(h);
+    const cls=past||isOcu?'ocu':wH===h?'sel':'libre';
+    const click=!past&&!isOcu?`onclick="selH(this,'${h}')"` :'';
+    return`<div class="slot ${cls}" ${click}>${h}</div>`;
+  }).join('');
+}
+window.selH=function(el,h){document.querySelectorAll('.slot').forEach(s=>s.classList.remove('sel'));el.classList.add('sel');wH=h;};
+window.filtHora=function(f,btn){filtro=f;document.querySelectorAll('.tf').forEach(b=>b.classList.remove('active'));btn.classList.add('active');if(wF)renderSlots(wF);};
+
+// PASO 4
+function renderRes(){
+  const b=barberos.find(x=>x.id===wB);
+  const s=servicios.find(x=>x.id===wS);
+  const d=new Date(wF);
+  $('res-data').innerHTML=`
+    <div class="res-row"><span class="res-lbl">Barbero</span><span class="res-val">${b?.nombre}</span></div>
+    <div class="res-row"><span class="res-lbl">Servicio</span><span class="res-val">${s?.nombre}</span></div>
+    <div class="res-row"><span class="res-lbl">Fecha</span><span class="res-val">${DIAS_L[d.getDay()]} ${d.getDate()} de ${MESES_C[d.getMonth()]}</span></div>
+    <div class="res-row"><span class="res-lbl">Hora</span><span class="res-val">${wH}</span></div>
+    <div class="res-row"><span class="res-lbl">Precio</span><span class="res-val gold">${fCOP(s?.precio||0)}</span></div>`;
+}
+
+// CONFIRMAR
+window.confirmar=async function(){
+  const nombre=$('cli-nom').value.trim();
+  const tel=$('cli-tel').value.trim();
+  if(!nombre){toast('Ingresa tu nombre','err');return;}
+  const ocu=turnos.find(t=>t.barberoId===wB&&t.fecha===wF&&t.hora===wH&&t.estado!=='listo');
+  if(ocu){toast('Esa hora ya fue tomada, elige otra','err');wH=null;renderSlots(wF);setStep(3);return;}
+  try{
+    await addDoc(collection(db,'barberias',BID,'turnos'),{cliente:nombre,tel,barberoId:wB,servicioId:wS,hora:wH,fecha:wF,estado:'espera',creadoEn:serverTimestamp()});
+    await addDoc(collection(db,'barberias',BID,'clientes'),{nombre,tel,barberoId:wB,visitas:0,creadoEn:serverTimestamp()});
+    const b=barberos.find(x=>x.id===wB);
+    const s=servicios.find(x=>x.id===wS);
+    const wa=b?.wa||cfg?.wa;
+    if(wa){const msg=`✂️ *Nuevo turno*\n👤 ${nombre}${tel?'\n📱 '+tel:''}\n💈 ${s?.nombre}\n🗓 ${wF} · ${wH}`;window.open(`https://wa.me/${wa.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`,'_blank');}
+    $('wiz').style.display='none';$('steps-ui').style.display='none';
+    const ss=$('suc');ss.classList.add('show');
+    const d=new Date(wF);
+    $('suc-detail').innerHTML=`<b>${nombre}</b>, te esperamos el <b>${DIAS_L[d.getDay()]} ${d.getDate()}</b> a las <b>${wH}</b><br>con ${b?.nombre} · ${s?.nombre}`;
+    $('btn-wa').onclick=()=>{const share=`¡Agendé mi cita! ✂️ ${s?.nombre} · ${wF} a las ${wH}`;window.open(`https://wa.me/?text=${encodeURIComponent(share)}`,'_blank');};
+  }catch(e){toast('Error al confirmar','err');console.error(e);}
+};
+
+window.resetWiz=function(){
+  wB=wS=wF=wH=null;
+  $('wiz').style.display='';$('steps-ui').style.display='';
+  $('suc').classList.remove('show');
+  $('cli-nom').value='';$('cli-tel').value='';
+  $('hora-sec').style.display='none';
+  renderBarberos();setStep(1);
+};
+
+// HISTORIAL
+function renderHistorial(){
+  const lcls={espera:'be',atencion:'ba',listo:'bl'};
+  const ltxt={espera:'EN ESPERA',atencion:'✂ ATENDIENDO',listo:'✓ LISTO'};
+  const ts=[...turnos].sort((a,b)=>a.fecha.localeCompare(b.fecha)||a.hora.localeCompare(b.hora));
+  $('lista-tc').innerHTML=ts.length?ts.map(t=>{
+    const b=barberos.find(x=>x.id===t.barberoId);
+    const s=servicios.find(x=>x.id===t.servicioId);
+    const d=new Date(t.fecha);
+    return`<div class="tc ${t.estado}"><div class="tc-top"><div class="tc-hora">${t.hora}</div><span class="tc-badge ${lcls[t.estado]}">${ltxt[t.estado]}</span></div><div style="font-size:14px;font-weight:700">${t.cliente}</div><div style="font-size:12px;color:var(--muted2);margin-top:2px">${s?.nombre||'—'} · ${b?.nombre||'—'}</div><div style="font-size:11px;color:var(--muted);margin-top:5px;font-family:'JetBrains Mono',monospace">${DIAS_L[d.getDay()]} ${d.getDate()} ${MESES_C[d.getMonth()]}</div></div>`;
+  }).join(''):'<div style="text-align:center;color:var(--muted);padding:40px;font-size:13px">Sin turnos registrados</div>';
+}
+
+// PRECIOS
+function renderPrecios(){
+  $('lista-pr').innerHTML=servicios.map(s=>`<div class="pr"><div class="pr-icon">${ICONOS[s.id]||'✂️'}</div><div class="pr-nombre">${s.nombre}</div><div class="pr-val">${fCOP(s.precio)}</div></div>`).join('');
+}
+
+// TOAST
+let tT;
+window.toast=function(msg,type=''){const el=$('toast');el.textContent=msg;el.className='toast show'+(type?' '+type:'');clearTimeout(tT);tT=setTimeout(()=>el.classList.remove('show'),2600);};
+
+// Init cal
+renderCal();
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
